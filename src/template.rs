@@ -42,7 +42,12 @@ impl Display for TemplateErr {
 
 impl Error for TemplateErr {}
 
-pub fn apply_template<T, F, O>(template: T, file: F, out: O, yaml: &Value) -> Result<(), TemplateErr>
+pub fn apply_template<T, F, O>(
+    template: T,
+    file: F,
+    out: O,
+    yaml: &Value,
+) -> Result<(), TemplateErr>
 where
     T: AsRef<Path>,
     F: AsRef<Path>,
@@ -104,11 +109,11 @@ where
         start += last as usize;
         let temp = &template_data[start..];
         let end = match temp.find("}}") {
-            Some(i) => i+start,
-            None => continue, 
+            Some(i) => i + start,
+            None => continue,
         };
-        
-        let ident = &template_data[start+7..end];
+
+        let ident = &template_data[start + 7..end];
         let length = if let Some(val) = yaml.get(ident) {
             let to_rep = format!("{{{{data.{ident}}}}}");
             let rep_with = match val {
@@ -116,9 +121,9 @@ where
                 Value::Bool(v) => format!("{v}"),
                 Value::Number(v) => format!("{v}"),
                 Value::Null => "null".to_string(),
-                _ => format!("{val:?}")
+                _ => format!("{val:?}"),
             };
-            
+
             template_data = template_data.replace(&to_rep, &rep_with);
 
             rep_with.len() as i64 - to_rep.len() as i64

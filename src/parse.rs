@@ -1,10 +1,10 @@
+pub mod common;
 pub mod filter;
 pub mod rule;
-pub mod common;
 
 use crate::error::*;
-use crate::rule::Rule;
 use crate::field;
+use crate::rule::Rule;
 
 pub fn parse(data: String) -> ParseResult<Vec<Rule>> {
     let data: toml::Value = toml::from_str(&data).map_err(ParseError::TomlError)?;

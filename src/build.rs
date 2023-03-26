@@ -1,3 +1,4 @@
+use std::fs::copy;
 use std::{fs, io, path::Path, str::FromStr};
 
 use crate::filepath::FilePath;
@@ -12,10 +13,7 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
             if path.is_dir() {
                 files.append(&mut visit_dirs(&path)?);
             } else {
-                files.push(
-                    FilePath::from_str(&entry.path().to_string_lossy())
-                        .unwrap(),
-                );
+                files.push(FilePath::from_str(&entry.path().to_string_lossy()).unwrap());
             }
         }
     }
@@ -37,6 +35,7 @@ pub fn build(rules: Vec<Rule>) -> bool {
         .collect::<Vec<_>>();
 
     println!("[INFO] Building site");
+    println!("[INFO] Generating data from `content/`");
     for file in files {
         println!("[INFO] Checking file {}", file.full());
         for rule in &rules {
@@ -49,6 +48,23 @@ pub fn build(rules: Vec<Rule>) -> bool {
 
                 break;
             }
+        }
+    }
+
+    println!("[INFO] Site generation complete, copying `public/`");
+    let files = visit_dirs(Path::new("public"))
+        .unwrap()
+        .iter()
+        .map(|f| f.clone().strip_prefix("/"))
+        .collect::<Vec<_>>();
+
+    for file in files {
+        if let Err(e) = copy(
+            file.full(),
+            file.clone().strip_prefix("public").prefix("output").full(),
+        ) {
+            eprintln!("[FAIL] Failed to copy {file}: {e}");
+            return false;
         }
     }
 

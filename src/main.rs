@@ -2,13 +2,13 @@ mod build;
 mod error;
 mod filepath;
 mod filter;
-mod rule;
 mod parse;
+mod rule;
 mod tempfile;
 mod template;
 
-use std::path::Path;
 use std::fs::read_to_string;
+use std::path::Path;
 use std::process::exit;
 
 fn main() {

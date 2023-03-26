@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::filter::Filter;
 use crate::error::*;
 use crate::field;
+use crate::filter::Filter;
 
 pub fn parse_filter(filter: &toml::Table) -> ParseResult<(Filter, Option<String>)> {
     let name = if let Some(toml::Value::String(s)) = &filter.get("name") {

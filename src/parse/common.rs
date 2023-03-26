@@ -11,18 +11,16 @@ macro_rules! field {
 
 #[macro_export]
 macro_rules! array {
-    ( $d:ident, $n:ident, $t:ident ) => {
-        {
-            let mut new = Vec::new();
-            for i in field!($d, $n, Array) {
-                if let toml::Value::$t(v) = i {
-                    new.push(v);
-                } else {
-                    return Err(ParseError::BadArrayItem);
-                }
+    ( $d:ident, $n:ident, $t:ident ) => {{
+        let mut new = Vec::new();
+        for i in field!($d, $n, Array) {
+            if let toml::Value::$t(v) = i {
+                new.push(v);
+            } else {
+                return Err(ParseError::BadArrayItem);
             }
-
-            new
         }
-    };
+
+        new
+    }};
 }

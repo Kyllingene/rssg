@@ -6,13 +6,13 @@ pub enum ParseError {
     MissingField(&'static str),
     BadArrayItem,
     TomlError(toml::de::Error),
-    
+
     // Rule
     BadRegex(String),
     NoSuchFilter(String),
 
     // Filter
-    MissingFilterName
+    MissingFilterName,
 }
 
 impl std::fmt::Display for ParseError {

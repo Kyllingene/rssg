@@ -31,10 +31,7 @@ impl Filter {
         match FilePath::from_str(&substitute(&self.outfile, path)) {
             Ok(new) => Ok(tempdir(&self.command, &new)),
 
-            Err(e) => Err(format!(
-                "Filter outfile {} invalid: {e}",
-                self.outfile
-            )),
+            Err(e) => Err(format!("Filter outfile {} invalid: {e}", self.outfile)),
         }
     }
 
@@ -89,22 +86,23 @@ impl Filter {
                     .collect::<Vec<_>>(),
             )
             .spawn()
-        {        
-            Ok(mut child) => {
-                match child.wait() {
-                    Ok(code) => {
-                        if !code.success() {
-                            eprintln!("[FAIL] Filter `{subbed_command}` exited with non-zero code: {}", code.code().unwrap_or(1));
-                            return false;
-                        }
-                    }
-
-                    Err(e) => {
-                        eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+        {
+            Ok(mut child) => match child.wait() {
+                Ok(code) => {
+                    if !code.success() {
+                        eprintln!(
+                            "[FAIL] Filter `{subbed_command}` exited with non-zero code: {}",
+                            code.code().unwrap_or(1)
+                        );
                         return false;
                     }
                 }
-            }
+
+                Err(e) => {
+                    eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+                    return false;
+                }
+            },
 
             Err(e) => {
                 eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");

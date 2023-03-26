@@ -57,7 +57,10 @@ impl Rule {
         let mut cwpath = tempdir(&format!("{path}-yamlless"), &path);
 
         if let Err(e) = create_dir_all(cwpath.dir()) {
-            eprintln!("[FAIL:{}] Failed to create parent directories: {e}", line!());
+            eprintln!(
+                "[FAIL:{}] Failed to create parent directories: {e}",
+                line!()
+            );
             return false;
         }
 
@@ -65,7 +68,8 @@ impl Rule {
             .create(true)
             .write(true)
             .truncate(true)
-            .open(&cwpath.full()) {
+            .open(&cwpath.full())
+        {
             Ok(mut f) => {
                 if let Err(e) = f.write_all(data.as_bytes()) {
                     eprintln!("[FAIL:{}] Failed to write to file {cwpath}: {e}", line!());
@@ -92,12 +96,18 @@ impl Rule {
             let out = tempdir(template, &cwpath);
 
             if let Err(e) = create_dir_all(out.dir()) {
-                eprintln!("[FAIL:{}] Failed to create parent directories: {e}", line!());
+                eprintln!(
+                    "[FAIL:{}] Failed to create parent directories: {e}",
+                    line!()
+                );
                 return false;
             }
 
             if let Err(e) = create_dir_all(out.dir()) {
-                eprintln!("[FAIL:{}] Failed to create tempfile directory structure for template: {e}", line!());
+                eprintln!(
+                    "[FAIL:{}] Failed to create tempfile directory structure for template: {e}",
+                    line!()
+                );
                 return false;
             }
 
@@ -118,7 +128,10 @@ impl Rule {
         };
 
         if let Err(e) = create_dir_all(out.dir()) {
-            eprintln!("[FAIL:{}] Failed to create final file parent directories: {e}", line!());
+            eprintln!(
+                "[FAIL:{}] Failed to create final file parent directories: {e}",
+                line!()
+            );
             return false;
         }
 

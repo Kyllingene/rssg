@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use crate::error::*;
 use crate::filter::Filter;
 use crate::parse::filter::parse_filter;
-use crate::{field, array};
 use crate::rule::Rule;
+use crate::{array, field};
 
 pub fn parse_rule(data: &toml::Table, filter_map: &HashMap<String, Filter>) -> ParseResult<Rule> {
     let rule = field!(data, rule, String);
@@ -25,14 +25,18 @@ pub fn parse_rule(data: &toml::Table, filter_map: &HashMap<String, Filter>) -> P
         }
     }
 
-    let mut rule = Rule::new(rule, output.clone()).map_err(|_| ParseError::BadRegex(rule.clone()))?;
+    let mut rule =
+        Rule::new(rule, output.clone()).map_err(|_| ParseError::BadRegex(rule.clone()))?;
     rule.filter_all(filters);
     rule.template_all(templates.into_iter().cloned().collect());
 
     Ok(rule)
 }
 
-pub fn parse_rules(rules: &Vec<toml::Value>, filters: &HashMap<String, Filter>) -> ParseResult<Vec<Rule>> {
+pub fn parse_rules(
+    rules: &Vec<toml::Value>,
+    filters: &HashMap<String, Filter>,
+) -> ParseResult<Vec<Rule>> {
     let mut new = Vec::new();
     for i in rules {
         if let toml::Value::Table(v) = i {
