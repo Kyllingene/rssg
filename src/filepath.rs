@@ -57,11 +57,6 @@ impl FilePath {
         self
     }
 
-    pub fn extension<S: ToString>(mut self, ext: S) -> Self {
-        self.ext = ext.to_string();
-        self
-    }
-
     pub fn full(&self) -> String {
         self.to_string()
     }
@@ -71,7 +66,7 @@ impl FilePath {
     }
 
     pub fn dir(&self) -> String {
-        self.dir.clone().unwrap_or_else(String::new)
+        self.dir.clone().unwrap_or_default()
     }
 
     pub fn ext(&self) -> String {
@@ -88,7 +83,7 @@ impl Display for FilePath {
                 if dir.is_empty() {
                     String::new()
                 } else {
-                    format!("{}/", dir)
+                    format!("{dir}/")
                 }
             } else {
                 String::new()

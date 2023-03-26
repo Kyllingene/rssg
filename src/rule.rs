@@ -28,16 +28,8 @@ impl Rule {
         })
     }
 
-    pub fn filter(&mut self, filter: Filter) {
-        self.filters.push(filter);
-    }
-
     pub fn filter_all(&mut self, mut filters: Vec<Filter>) {
         self.filters.append(&mut filters);
-    }
-
-    pub fn template(&mut self, template: String) {
-        self.templates.push(template);
     }
 
     pub fn template_all(&mut self, mut templates: Vec<String>) {
@@ -75,7 +67,7 @@ impl Rule {
             .truncate(true)
             .open(&cwpath.full()) {
             Ok(mut f) => {
-                if let Err(e) = f.write_all(&data.as_bytes()) {
+                if let Err(e) = f.write_all(data.as_bytes()) {
                     eprintln!("[FAIL:{}] Failed to write to file {cwpath}: {e}", line!());
                     return false;
                 }
@@ -97,7 +89,7 @@ impl Rule {
         for template in &self.templates {
             println!("[INFO] Applying template file {template} to {cwpath}");
 
-            let out = tempdir(&template, &cwpath);
+            let out = tempdir(template, &cwpath);
 
             if let Err(e) = create_dir_all(out.dir()) {
                 eprintln!("[FAIL:{}] Failed to create parent directories: {e}", line!());
@@ -109,12 +101,12 @@ impl Rule {
                 return false;
             }
 
-            if let Err(e) = apply_template(&template, &cwpath.full(), out.full(), &yaml) {
+            if let Err(e) = apply_template(template, &cwpath.full(), out.full(), &yaml) {
                 eprintln!("[FAIL:{}] Failed to apply template: {e}", line!());
                 return false;
             }
 
-            cwpath = tempdir(&template, &cwpath);
+            cwpath = tempdir(template, &cwpath);
         }
 
         let out = match FilePath::from_str(&substitute(&self.output, &path)) {
@@ -130,7 +122,7 @@ impl Rule {
             return false;
         }
 
-        if let Err(e) = copy(cwpath.full(), &out.full()) {
+        if let Err(e) = copy(cwpath.full(), out.full()) {
             eprintln!("[FAIL:{}] Failed to finalize file output: {e}", line!());
             return false;
         }

@@ -1,0 +1,3 @@
+add/clean comments +docs
+use a +log library
+add unit tests +test

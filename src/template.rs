@@ -3,13 +3,18 @@ use std::fmt::Display;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::Path;
+use std::str::FromStr;
 
 use serde_yaml::Value;
+
+use crate::filepath::FilePath;
 
 const VERSION: Option<&str> = option_env!("CARGO_PKG_VERSION");
 
 #[derive(Debug)]
 pub enum TemplateErr {
+    InvalidPath(String),
+
     TemplateNotFound(String),
     FileNotFound(String),
 
@@ -22,6 +27,8 @@ pub enum TemplateErr {
 impl Display for TemplateErr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidPath(file) => write!(f, "Invalid file path {file}"),
+
             Self::TemplateNotFound(file) => write!(f, "Failed to find template file {file}"),
             Self::FileNotFound(file) => write!(f, "Failed to find input file {file}"),
 
@@ -41,9 +48,16 @@ where
     F: AsRef<Path>,
     O: AsRef<Path>,
 {
-    if !template.as_ref().exists() {
+    let t = FilePath::from_str(&template.as_ref().display().to_string())
+        .map_err(|_| TemplateErr::InvalidPath(template.as_ref().display().to_string()))?
+        .prefix("templates")
+        .to_string();
+
+    let template = Path::new(&t);
+
+    if !template.exists() {
         return Err(TemplateErr::TemplateNotFound(
-            template.as_ref().display().to_string(),
+            template.display().to_string(),
         ));
     }
 
@@ -53,7 +67,7 @@ where
         ));
     }
 
-    let mut template_data = match File::open(&template) {
+    let mut template_data = match File::open(template) {
         Ok(mut f) => {
             let mut buf = String::new();
 
@@ -83,7 +97,7 @@ where
 
     template_data = template_data
         .replace("{{data}}", data.as_str())
-        .replace("{{version}}", &format!("{}", VERSION.unwrap_or("unknown")));
+        .replace("{{version}}", VERSION.unwrap_or("unknown"));
 
     let mut last = 0;
     while let Some(mut start) = template_data[(last as usize)..].find("{{data.") {

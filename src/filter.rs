@@ -1,27 +1,13 @@
-use std::env;
-use std::fs;
 use std::fs::create_dir_all;
 use std::{process::Command, str::FromStr};
 
 use regex::Regex;
+use serde::Deserialize;
 
 use crate::filepath::FilePath;
 use crate::tempfile::tempdir;
 
-fn program_in_path(program: String) -> bool {
-    // TODO: windows uses ; as the path sep
-    if let Ok(path) = env::var("PATH") {
-        for p in path.split(":") {
-            let p_str = format!("{}/{}", p, program);
-            if fs::metadata(p_str).is_ok() {
-                return true;
-            }
-        }
-    }
-    false
-}
-
-pub fn substitute(string: &String, path: &FilePath) -> String {
+pub fn substitute(string: &str, path: &FilePath) -> String {
     string
         .replace("{full}", &path.full())
         .replace("{dir}", &path.dir())
@@ -30,7 +16,7 @@ pub fn substitute(string: &String, path: &FilePath) -> String {
         .replace("{\\{", "{{")
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Filter {
     command: String,
     outfile: String,
@@ -42,11 +28,11 @@ impl Filter {
     }
 
     pub fn tempdir(&self, path: &FilePath) -> Result<FilePath, String> {
-        match FilePath::from_str(&substitute(&self.outfile, &path)) {
+        match FilePath::from_str(&substitute(&self.outfile, path)) {
             Ok(new) => Ok(tempdir(&self.command, &new)),
 
             Err(e) => Err(format!(
-                "[FAIL] Filter outfile {} invalid: {e}",
+                "Filter outfile {} invalid: {e}",
                 self.outfile
             )),
         }
@@ -58,11 +44,11 @@ impl Filter {
     // Returns the frontmatter, if any.
     pub fn exec(&self, path: &FilePath) -> bool {
         // If outfile is an invalid path, then don't bother running the filter
-        let out = match self.tempdir(&path) {
+        let out = match self.tempdir(path) {
             Ok(new) => new,
 
             Err(e) => {
-                eprintln!("{}", e);
+                eprintln!("[FAIL] {e}");
                 return false;
             }
         };
@@ -76,7 +62,7 @@ impl Filter {
         let re = Regex::new("([^\"]+\"|[^\\s]+)").unwrap();
         let quotes = Regex::new("\"(.+)\"").unwrap();
 
-        let subbed_command = substitute(&self.command, &path).replace("{outfile}", &out.full());
+        let subbed_command = substitute(&self.command, path).replace("{outfile}", &out.full());
 
         let mut args = re.captures_iter(&subbed_command);
 
@@ -99,7 +85,7 @@ impl Filter {
         println!("[INFO] Running filter `{subbed_command}`");
         match Command::new(command)
             .args(
-                args.map(|s| quotes.replace_all(&s[0].to_string(), "$1").to_string())
+                args.map(|s| quotes.replace_all(&s[0], "$1").to_string())
                     .collect::<Vec<_>>(),
             )
             .spawn()

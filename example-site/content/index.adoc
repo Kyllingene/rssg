@@ -1,5 +1,7 @@
-:title: Home Page
-:description: The homepage for the example website.
+---
+title: Home Page
+description: The homepage for the example website.
+---
 
 = Hello, World!
 
