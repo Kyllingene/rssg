@@ -1,0 +1,13 @@
+[package]
+name = "ssg"
+version = "0.2.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+regex = "1.7"
+serde = "1.0.158"
+toml = "0.7"
+serde_yaml = "0.9.19"
+yaml-front-matter = "0.1.0"

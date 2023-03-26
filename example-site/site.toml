@@ -1,0 +1,7 @@
+#:schema none
+
+[dev]
+root = "/test/"
+
+[deploy]
+root = "/"

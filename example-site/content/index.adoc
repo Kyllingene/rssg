@@ -1,0 +1,6 @@
+:title: Home Page
+:description: The homepage for the example website.
+
+= Hello, World!
+
+== It Works!
