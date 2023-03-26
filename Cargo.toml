@@ -1,10 +1,16 @@
 [package]
 name = "rssg"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 
 license = "mit"
 authors = ["Kyllingene"]
+description = "A rusty static-site generator leveraging shell commands."
+categories = ["command-line-utilities", "template-engine"]
+keywords = ["ssg", "static-site-generator", "website"]
+
+homepage = "https://github.com/kyllingene/rssg"
+repository = "https://github.com/kyllingene/rssg"
 
 [dependencies]
 regex = "1.7"
