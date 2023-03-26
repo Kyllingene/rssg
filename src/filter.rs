@@ -97,16 +97,36 @@ impl Filter {
         }
 
         println!("[INFO] Running filter `{subbed_command}`");
-        if let Err(e) = Command::new(command)
+        match Command::new(command)
             .args(
                 args.map(|s| quotes.replace_all(&s[0].to_string(), "$1").to_string())
                     .collect::<Vec<_>>(),
             )
-            .output()
-        {
-            eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
-            return false;
+            .spawn()
+        {        
+            Ok(mut child) => {
+                match child.wait() {
+                    Ok(code) => {
+                        if !code.success() {
+                            eprintln!("[FAIL] Filter `{subbed_command}` exited with non-zero code: {}", code.code().unwrap_or(1));
+                            return false;
+                        }
+                    }
+
+                    Err(e) => {
+                        eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+                        return false;
+                    }
+                }
+            }
+
+            Err(e) => {
+                eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+                return false;
+            }
         }
+
+        println!("[INFO] Filter `{subbed_command}` exited successfully");
 
         true
     }
