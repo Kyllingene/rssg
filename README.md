@@ -201,12 +201,10 @@ cleanest way. If you need to change it up for whatever reason, check out the
 First, thank you for even considering contributing to the project!
 
 There are several things that need improving right now. First of all, unit
-tests should really get made. At the moment, whenever you recompile the site,
-*everything* gets recompiled, regardless of whether or not it has changed.
-Several other little changes would be nice as well; a watch-mode for
-development (watch the files and recompile when something changes), a more
-configurable log system, better logging, documentation, and general style
-improvements.
+tests should really get made. Several other little changes would be nice as
+well; a watch-mode for development (watch the files and recompile when
+something changes), a more configurable log system, better logging,
+documentation, and general style improvements.
 
 **Whatever you do, TEST it first!** Use the provided example (or your own) to
 ensure correctness. If you add a feature, add a test for it.
