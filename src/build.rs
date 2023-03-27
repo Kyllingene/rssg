@@ -1,7 +1,7 @@
 use std::fs::{copy, create_dir_all};
 use std::{fs, io, path::Path, str::FromStr};
 
-use log::{info, error};
+use log::{info, error, debug};
 
 use crate::filepath::FilePath;
 use crate::rule::Rule;
@@ -39,10 +39,10 @@ pub fn build(rules: Vec<Rule>) -> bool {
     info!("Building site");
     info!("Generating data from `content/`");
     for file in files {
-        info!("Checking file {}", file.full());
+        info!("Building file {}", file.full());
         for rule in &rules {
             if rule.matches(&file) {
-                info!("Found matching rule");
+                debug!("Found matching rule");
                 if !rule.exec(file) {
                     error!("Rule failed, aborting");
                     return false;

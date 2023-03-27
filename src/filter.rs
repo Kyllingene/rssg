@@ -1,7 +1,7 @@
 use std::fs::create_dir_all;
 use std::{process::Command, str::FromStr};
 
-use log::{info, error};
+use log::{error, debug};
 use regex::Regex;
 use serde::Deserialize;
 
@@ -80,7 +80,7 @@ impl Filter {
             return false;
         }
 
-        info!("Running filter `{}`", subbed_command);
+        debug!("Running filter `{}`", subbed_command);
         match Command::new(command)
             .args(
                 args.map(|s| quotes.replace_all(&s[0], "$1").to_string())
@@ -112,7 +112,7 @@ impl Filter {
             }
         }
 
-        info!("Filter `{}` exited successfully", subbed_command);
+        debug!("Filter `{}` exited successfully", subbed_command);
 
         true
     }

@@ -2,7 +2,7 @@ use std::fs::{copy, create_dir_all, read_to_string, OpenOptions};
 use std::io::Write;
 use std::str::FromStr;
 
-use log::{info, error};
+use log::{error, debug};
 use regex::Regex;
 use yaml_front_matter::YamlFrontMatter;
 
@@ -92,7 +92,7 @@ impl Rule {
         }
 
         for template in &self.templates {
-            info!("Applying template file {} to {}", template, cwpath);
+            debug!("Applying template file {} to {}", template, cwpath);
 
             let out = tempdir(template, &cwpath);
 

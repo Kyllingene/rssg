@@ -11,7 +11,7 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::process::exit;
 
-use log::{error};
+use log::error;
 use sarge::{ArgumentParser, arg, get_flag, get_val};
 
 fn main() {
@@ -19,6 +19,7 @@ fn main() {
     parser.add(arg!(flag, both, 'h', "help"));
     parser.add(arg!(flag, both, 'c', "compile"));
     parser.add(arg!(str, both, 'l', "logfile"));
+    parser.add(arg!(flag, both, 'v', "verbose"));
 
     let _args = match parser.parse() {
         Ok(a) => a,
@@ -32,11 +33,12 @@ fn main() {
         println!("{} [options]", parser.binary.unwrap_or_else(|| String::from("rssg")));
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
+        println!("     -v | --verbose : include debug output");
 
         return;
     }
 
-    let dis = fern::Dispatch::new()
+    let mut dis = fern::Dispatch::new()
         // Perform allocation-free log formatting
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -45,9 +47,13 @@ fn main() {
                 record.target(),
                 message
             ))
-        })
-        // Add blanket level filter -
-        .level(log::LevelFilter::Debug);
+        });
+
+    if get_flag!(parser, both, 'v', "verbose") {
+        dis = dis.level(log::LevelFilter::Debug);
+    } else {
+        dis = dis.level(log::LevelFilter::Info);
+    }
 
     if let Some(i) = get_val!(parser, both, 'l', "logfile") {
         let path = match fern::log_file(i.get_str()) {
