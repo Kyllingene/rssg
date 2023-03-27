@@ -217,7 +217,7 @@ contributions are helpful and functional, I won't be a stickler for formatting.
 Unless you specifically state otherwise, all contributions are licensed under the
 project license (MIT).
 
-***Never submit incomplete code (`todo!()`, `unimplemented!()`, etc.***
+***Never submit incomplete code (`todo!()`, `unimplemented!()`, etc.)***
 
 ### Copyright
 
