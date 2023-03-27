@@ -1,4 +1,4 @@
-use std::fs::copy;
+use std::fs::{copy, create_dir_all};
 use std::{fs, io, path::Path, str::FromStr};
 
 use crate::filepath::FilePath;
@@ -59,6 +59,11 @@ pub fn build(rules: Vec<Rule>) -> bool {
         .collect::<Vec<_>>();
 
     for file in files {
+        if let Err(e) = create_dir_all(file.clone().strip_prefix("public").prefix("output").dir()) {
+            eprintln!("[FAIL] Failed to create {}: {e}", file.dir());
+            return false;
+        }
+
         if let Err(e) = copy(
             file.full(),
             file.clone().strip_prefix("public").prefix("output").full(),

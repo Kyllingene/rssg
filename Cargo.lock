@@ -91,6 +91,7 @@ name = "rssg"
 version = "1.0.1"
 dependencies = [
  "regex",
+ "sarge",
  "serde",
  "serde_yaml 0.9.19",
  "toml",
@@ -102,6 +103,12 @@ name = "ryu"
 version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f91339c0467de62360649f8d3e185ca8de4224ff281f66000de5eb2a77a79041"
+
+[[package]]
+name = "sarge"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf4e9076a2269cccc52b41fa0ee0b089579501a224df00d0e30c0f78a117b0c6"
 
 [[package]]
 name = "serde"
