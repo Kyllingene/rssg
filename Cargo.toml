@@ -3,7 +3,7 @@ name = "rssg"
 version = "1.3.0"
 edition = "2021"
 
-license = "mit"
+license = "MIT"
 authors = ["Kyllingene"]
 description = "A rusty static-site generator leveraging shell commands."
 categories = ["command-line-utilities", "template-engine"]
