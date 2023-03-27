@@ -16,7 +16,9 @@
 
 **An example website can be found in the `example-site` directory.**
 
-#### Command-line usage
+---
+
+### Command-line usage
 
 ```
 rssg [options]
@@ -31,7 +33,7 @@ rssg [options]
                       defaults to `public`
 ```
 
-#### File structure
+### File structure
 Websites use a structure to make compilation simpler. The structure looks like 
 this:
 ```
@@ -53,13 +55,15 @@ templates in the `templates` directory. The results are placed into the
 `output` directory. Any and all files in the `public` directory get copied into 
 the output without any modifications, preserving directory structure.
 
-#### `rules.toml`
+---
+
+### `rules.toml`
 
 The core of the generator is the `rules.toml`. It dictates what happens to 
 everything in the `content` directory. It's made up of two things: filters and 
 rules.
 
-##### Filters
+### Filters
 
 Filters take an input file, run a command (probably to change the file), and 
 output a file. An example command might be `pandoc {full} -o {outfile}`. In 
@@ -84,10 +88,12 @@ old location (with extension changed):
 name = "markdown"
 
 # The command to run, with substitutions
+# example/path.html -> `pandoc example/path.html -o temp/<..>/path.html`
 command = "pandoc {full} -o {outfile}"
 
 # The resulting file, with substitutions
 # !!! NOT neccessarily where the file will be in the final output
+# example/path.html -> <hash of command + filepath>/path.html
 outfile = "{dir}/{name}.html"
 ```
 
@@ -95,15 +101,16 @@ You can also specify "inline" filters inside of a rule specification (see
 below), like so:
 ```toml
 # ...
-filters = [{command = "pandoc {full} -o {outfile}", outfile = 
-"{dir}/{name}.html"}]
+filters = [
+    {command = "pandoc {full} -o {outfile}", outfile = "{dir}/{name}.html"}
+]
 # ...
 ```
 
 *NOTE*: Filter outfiles are stored in the `temp` directory during generation, 
-with hashed directory names. This is irrelevant for site development.
+with unique directory names. This is irrelevant for site development.
 
-##### Templates
+### Templates
 
 Templates are files that you can use encapsulate other files. For example, you 
 might have a `default.html` template that contains a header and footer to wrap 
@@ -152,7 +159,7 @@ title: Homepage
 </html>
 ```
 
-##### Rules
+### Rules
 
 Filters do nothing on their own; they have to be used inside of rules. Rules 
 are composed of four components: a regex pattern (`rule`), a list of filters, 
