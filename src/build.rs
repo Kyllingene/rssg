@@ -85,7 +85,7 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
                         info!("Deleted outdated directory `{}`", path.dir());
                     }
 
-                    file_cache.remove(&file);
+                    file_cache.remove(file);
 
                     continue;
                 } else {
@@ -106,7 +106,7 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
                                 }
                             }
 
-                            file_cache.remove(&file);
+                            file_cache.remove(file);
 
                             continue;
                         }
