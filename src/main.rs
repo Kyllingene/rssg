@@ -38,11 +38,11 @@ fn main() {
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
         println!("     -v | --verbose : include debug output");
-        println!("          --content : source directory");
+        println!("          --content : set source directory");
         println!("                      defaults to `content`");
-        println!("           --output : output directory");
+        println!("           --output : set output directory");
         println!("                      defaults to `output`");
-        println!("           --public : public directory");
+        println!("           --public : set public directory");
         println!("                      defaults to `public`");
 
         return;
