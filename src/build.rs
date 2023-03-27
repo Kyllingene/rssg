@@ -1,4 +1,4 @@
-use std::fs::{copy, create_dir_all, read_dir, remove_file};
+use std::fs::{copy, create_dir_all, read_dir, remove_file, remove_dir, remove_dir_all, create_dir};
 use std::io::ErrorKind;
 use std::{fs, io, path::Path, str::FromStr};
 
@@ -26,9 +26,6 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
 }
 
 pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) -> bool {
-    // _ = fs::remove_dir_all(&output);
-    // _ = fs::remove_dir_all("temp");
-
     if let Err(e) = fs::create_dir_all(&output) {
         if !matches!(e.kind(), ErrorKind::AlreadyExists) {
             error!("Failed to make `{}/`: {}", output, e);
@@ -43,14 +40,17 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) 
         }
     }
 
-    
     let content_files = visit_dirs(Path::new(&content))
         .unwrap();
     let public_files = visit_dirs(Path::new(&public))
         .unwrap();
+    let template_files = visit_dirs(Path::new("templates"))
+        .unwrap();
 
     let files = content_files.iter()
-        .chain(public_files.iter()).collect::<Vec<_>>();
+        .chain(public_files.iter())
+        .chain(template_files.iter())
+        .collect::<Vec<_>>();
 
     let mut file_cache = cache::read_cache(Path::new(".rssg-cache"));
     let modified = cache::modified(&file_cache, &content, &public, &String::from("templates"))
@@ -60,13 +60,60 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) 
         .any(|s| s.dir().starts_with("templates/"));
 
     info!("Building site");
-    for file in file_cache.keys() {
-        if !files.contains(&file) {
-            for rule in &rules {
-                if rule.matches(file) {
-                    if let Ok(path) = rule.out(file) {
-                        if let Err(e) = remove_file(Path::new(&path.full())) {
-                            warn!("Failed to delete outdated file `{}`: {}", file.full(), e);
+    info!("Removing outdated files");
+    if file_cache.is_empty() {
+        _ = remove_dir_all(&output);
+        _ = remove_dir_all("temp");
+    
+        if let Err(e) = create_dir(Path::new(&output)) {
+            error!("Failed to create `{}`: {}", output, e);
+        }
+
+        if let Err(e) = create_dir(Path::new("temp")) {
+            error!("Failed to create `temp/`: {}", e);
+        }
+    } else {
+        for file in file_cache.clone().keys() {
+            if !files.contains(&file) {
+                debug!("Outdated file `{}`", file.full());
+                if file.full().starts_with(&public) {
+                    let path = file.clone().strip_prefix(&public).prefix(&output);
+                    if let Err(e) = remove_file(Path::new(&path.full())) {
+                        warn!("Failed to delete outdated file `{}`: {}", path.full(), e);
+                    } else {
+                        info!("Deleted outdated file `{}`", path.full());
+                    }
+
+                    if let Err(e) = remove_dir(Path::new(&path.dir())) {
+                        warn!("Failed to delete outdated directory `{}/`: {}", path.dir(), e);
+                    } else {
+                        info!("Deleted outdated directory `{}`", path.dir());
+                    }
+
+                    file_cache.remove(&file);
+
+                    continue;
+                } else {
+                    for rule in &rules {
+                        if rule.matches(file) {
+                            if let Ok(path) = rule.out(file) {
+                                let path = path.strip_prefix(&content).prefix(&output);
+                                if let Err(e) = remove_file(Path::new(&path.full())) {
+                                    warn!("Failed to delete outdated file `{}`: {}", path.full(), e);
+                                } else {
+                                    info!("Deleted outdated file `{}`", path.full());
+                                }
+
+                                if let Err(e) = remove_dir(Path::new(&path.dir())) {
+                                    warn!("Failed to delete outdated directory `{}/`: {}", path.dir(), e);
+                                } else {
+                                    info!("Deleted outdated directory `{}`", path.dir());
+                                }
+                            }
+
+                            file_cache.remove(&file);
+
+                            continue;
                         }
                     }
                 }
@@ -123,7 +170,7 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) 
         }
     }
 
-    for file in files {
+    for file in modified {
         debug!("Caching file `{}`", file.full());
         cache::cache_file(Path::new(&file.full()), &mut file_cache);
     }

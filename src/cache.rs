@@ -1,10 +1,10 @@
-use std::fs::{read_dir, read_to_string, OpenOptions, remove_file};
+use std::collections::HashMap;
+use std::fs::{read_dir, read_to_string, OpenOptions, remove_file, File};
 use std::io::Write;
 use std::{io, path::Path, str::FromStr};
-use std::collections::hash_map::{HashMap, DefaultHasher};
-use std::hash::{Hash, Hasher};
 
 use log::warn;
+use sha2::{Sha256, Digest};
 
 use crate::filepath::FilePath;
 
@@ -27,12 +27,17 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
     Ok(files)
 }
 
-pub fn hash_file(file: &Path) -> Option<(FilePath, u64)> {
-    let data = read_to_string(file).ok()?;
+pub fn hash_file(file: &Path) -> Option<(FilePath, u128)> {
+    let mut hasher = Sha256::new();
+    let mut f = File::open(file).ok()?;
 
-    let mut hasher = DefaultHasher::new();
-    data.hash(&mut hasher);
-    let data = hasher.finish();
+    _ = io::copy(&mut f, &mut hasher).ok()?;
+
+    let hash = hasher.finalize();
+    let mut data: u128 = 0;
+    for (i, byte) in hash.iter().enumerate() {
+        data |= (*byte as u128) << (i * 8) as u128;
+    }
 
     let file = match FilePath::from_str(&file.display().to_string()) {
         Ok(f) => f,
@@ -42,7 +47,7 @@ pub fn hash_file(file: &Path) -> Option<(FilePath, u64)> {
     Some((file, data))
 }
 
-pub fn cache_file(file: &Path, cache: &mut HashMap<FilePath, u64>) {
+pub fn cache_file(file: &Path, cache: &mut HashMap<FilePath, u128>) {
     let (file, data) = match hash_file(file) {
         Some(d) => d,
         None => {
@@ -54,7 +59,7 @@ pub fn cache_file(file: &Path, cache: &mut HashMap<FilePath, u64>) {
     cache.insert(file, data);
 }
 
-pub fn write_cache(path: &Path, cache: HashMap<FilePath, u64>) {
+pub fn write_cache(path: &Path, cache: HashMap<FilePath, u128>) {
     let mut cache_data = String::new();
     for (file, data) in cache {
         cache_data.push_str(format!("{file}  {data}\n").as_str());
@@ -79,7 +84,7 @@ pub fn write_cache(path: &Path, cache: HashMap<FilePath, u64>) {
     }
 }
 
-pub fn read_cache(path: &Path) -> HashMap<FilePath, u64> {
+pub fn read_cache(path: &Path) -> HashMap<FilePath, u128> {
     let mut cache = HashMap::new();
     let cache_data = if let Ok(d) = read_to_string(path) {
         d
@@ -99,7 +104,7 @@ pub fn read_cache(path: &Path) -> HashMap<FilePath, u64> {
             continue;
         };
 
-        let data = if let Some(Ok(d)) = line.next().map(|s| s.parse::<u64>()) {
+        let data = if let Some(Ok(d)) = line.next().map(|s| s.parse::<u128>()) {
             d
         } else {
             warn!("Invalid hash in .rssg-cache");
@@ -112,7 +117,7 @@ pub fn read_cache(path: &Path) -> HashMap<FilePath, u64> {
     cache
 }
 
-pub fn modified(cache: &HashMap<FilePath, u64>, content: &String, public: &String, templates: &String) -> Option<Vec<FilePath>> {
+pub fn modified(cache: &HashMap<FilePath, u128>, content: &String, public: &String, templates: &String) -> Option<Vec<FilePath>> {
     let mut files = visit_dirs(Path::new(content))
         .unwrap();
 

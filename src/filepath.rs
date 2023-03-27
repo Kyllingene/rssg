@@ -28,7 +28,11 @@ impl FilePath {
         };
 
         self.dir = if let Ok(nopre) = path.strip_prefix(pre) {
-            Some(nopre.display().to_string())
+            if let Ok(nopre) = path.strip_prefix("/") {
+                Some(nopre.display().to_string())
+            } else {
+                Some(nopre.display().to_string())
+            }
         } else if let Ok(nopre) = path.strip_prefix("/") {
             if let Ok(nopre) = nopre.strip_prefix(pre) {
                 Some(nopre.display().to_string())

@@ -1,6 +1,6 @@
 [package]
 name = "rssg"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2021"
 
 license = "MIT"
@@ -21,3 +21,4 @@ yaml-front-matter = "0.1.0"
 sarge = "2.0"
 fern = "0.6.2"
 log = "0.4.17"
+sha2 = "0.10.6"
