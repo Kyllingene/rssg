@@ -41,7 +41,7 @@ impl Rule {
         self.rule.is_match(&filepath.full())
     }
 
-    pub fn exec(&self, path: FilePath) -> bool {
+    pub fn exec(&self, path: FilePath, content: &String, output: &String) -> bool {
         let data = match read_to_string(&path.full()) {
             Ok(d) => d,
             Err(e) => {
@@ -121,7 +121,7 @@ impl Rule {
         }
 
         let out = match FilePath::from_str(&substitute(&self.output, &path)) {
-            Ok(f) => f.strip_prefix("content").prefix("output"),
+            Ok(f) => f.strip_prefix(content).prefix(output),
             Err(e) => {
                 error!("Failed to create final file: {}", e);
                 return false;

@@ -21,10 +21,14 @@ fn main() {
     parser.add(arg!(str, both, 'l', "logfile"));
     parser.add(arg!(flag, both, 'v', "verbose"));
 
+    parser.add(arg!(str, long, "content"));
+    parser.add(arg!(str, long, "output"));
+    parser.add(arg!(str, long, "public"));
+
     let _args = match parser.parse() {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("ERROR: Failed to parse arguments: {}", e);
+            eprintln!("ERROR: Failed to parse arguments: {e}");
             exit(1);
         }
     };
@@ -34,6 +38,12 @@ fn main() {
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
         println!("     -v | --verbose : include debug output");
+        println!("          --content : source directory");
+        println!("                      defaults to `content`");
+        println!("           --output : output directory");
+        println!("                      defaults to `output`");
+        println!("           --public : public directory");
+        println!("                      defaults to `public`");
 
         return;
     }
@@ -68,11 +78,9 @@ fn main() {
             eprintln!("ERROR: failed to establish logging to file: {e}");
             exit(1);
         }
-    } else {
-        if let Err(e) = dis.chain(std::io::stdout()).apply() {
-            eprintln!("ERROR: failed to establish logging to stdout: {e}");
-            exit(1);
-        }
+    } else if let Err(e) = dis.chain(std::io::stdout()).apply() {
+        eprintln!("ERROR: failed to establish logging to stdout: {e}");
+        exit(1);
     }
 
     if get_flag!(parser, both, 'c', "compile") {
@@ -81,8 +89,26 @@ fn main() {
             exit(1);
         }
 
-        if !Path::new("content").exists() {
-            error!("No content directory found, aborting");
+        let content = if let Some(c) = get_val!(parser, long, "content") {
+            c.get_str()
+        } else {
+            String::from("content")
+        };
+
+        let output = if let Some(c) = get_val!(parser, long, "output") {
+            c.get_str()
+        } else {
+            String::from("output")
+        };
+
+        let public = if let Some(c) = get_val!(parser, long, "public") {
+            c.get_str()
+        } else {
+            String::from("public")
+        };
+
+        if !Path::new(&content).exists() {
+            error!("Content directory (`{}`) not found, aborting", content);
             exit(1);
         }
 
@@ -102,7 +128,7 @@ fn main() {
             }
         };
 
-        if !build::build(rules) {
+        if !build::build(rules, content, output, public) {
             error!("Build failed");
             exit(1);
         }

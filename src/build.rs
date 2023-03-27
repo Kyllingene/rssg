@@ -23,27 +23,27 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
     Ok(files)
 }
 
-pub fn build(rules: Vec<Rule>) -> bool {
-    _ = fs::remove_dir_all("output");
+pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) -> bool {
+    _ = fs::remove_dir_all(&output);
     _ = fs::remove_dir_all("temp");
 
-    fs::create_dir_all("output").unwrap();
+    fs::create_dir_all(&output).unwrap();
     fs::create_dir_all("temp").unwrap();
 
-    let files = visit_dirs(Path::new("content"))
+    let files = visit_dirs(Path::new(&content))
         .unwrap()
         .iter()
         .map(|f| f.clone().strip_prefix("/"))
         .collect::<Vec<_>>();
 
     info!("Building site");
-    info!("Generating data from `content/`");
+    info!("Generating data from `{}/`", content);
     for file in files {
         info!("Building file {}", file.full());
         for rule in &rules {
             if rule.matches(&file) {
                 debug!("Found matching rule");
-                if !rule.exec(file) {
+                if !rule.exec(file, &content, &output) {
                     error!("Rule failed, aborting");
                     return false;
                 }
@@ -53,29 +53,29 @@ pub fn build(rules: Vec<Rule>) -> bool {
         }
     }
 
-    info!("Site generation complete, copying `public/`");
-    let files = visit_dirs(Path::new("public"))
+    info!("Site generation complete, copying `{}/`", public);
+    let files = visit_dirs(Path::new(&public))
         .unwrap()
         .iter()
         .map(|f| f.clone().strip_prefix("/"))
         .collect::<Vec<_>>();
 
     for file in files {
-        if let Err(e) = create_dir_all(file.clone().strip_prefix("public").prefix("output").dir()) {
+        if let Err(e) = create_dir_all(file.clone().strip_prefix(&public).prefix(&output).dir()) {
             error!("Failed to create {}: {}", file.dir(), e);
             return false;
         }
 
         if let Err(e) = copy(
             file.full(),
-            file.clone().strip_prefix("public").prefix("output").full(),
+            file.clone().strip_prefix(&public).prefix(&output).full(),
         ) {
             error!("Failed to copy {file}: {}", e);
             return false;
         }
     }
 
-    info!("Done building site, output at `output/`");
+    info!("Done building site, output at `{}/`", output);
 
     true
 }
