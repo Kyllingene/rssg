@@ -10,7 +10,6 @@
     - [Templates](#templates)
     - [Rules](#rules)
  - [Contributing](#contributing)
- - []
  - [Copyright](#copyright)
 
 ### Usage
