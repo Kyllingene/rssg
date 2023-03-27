@@ -1,6 +1,7 @@
 use std::fs::create_dir_all;
 use std::{process::Command, str::FromStr};
 
+use log::{info, error};
 use regex::Regex;
 use serde::Deserialize;
 
@@ -45,13 +46,13 @@ impl Filter {
             Ok(new) => new,
 
             Err(e) => {
-                eprintln!("[FAIL] {e}");
+                error!("{}", e);
                 return false;
             }
         };
 
         if let Err(e) = create_dir_all(out.dir()) {
-            eprintln!("[FAIL] Failed to create tempfile directory structure for filter: {e}");
+            error!("Failed to create tempfile directory structure for filter: {}", e);
             return false;
         }
 
@@ -66,7 +67,7 @@ impl Filter {
         let mut command = match args.next() {
             Some(c) => c,
             None => {
-                eprintln!("[FAIL] `{}` is not a valid command", self.command);
+                error!("`{}` is not a valid command", self.command);
                 return false;
             }
         }[0]
@@ -75,11 +76,11 @@ impl Filter {
         command = quotes.replace_all(&command, "$1").to_string();
 
         if let Err(e) = create_dir_all(out.dir()) {
-            eprintln!("[FAIL] Failed to create parent directories: {e}");
+            error!("Failed to create parent directories: {}", e);
             return false;
         }
 
-        println!("[INFO] Running filter `{subbed_command}`");
+        info!("Running filter `{}`", subbed_command);
         match Command::new(command)
             .args(
                 args.map(|s| quotes.replace_all(&s[0], "$1").to_string())
@@ -90,8 +91,9 @@ impl Filter {
             Ok(mut child) => match child.wait() {
                 Ok(code) => {
                     if !code.success() {
-                        eprintln!(
-                            "[FAIL] Filter `{subbed_command}` exited with non-zero code: {}",
+                        error!(
+                            "Filter `{}` exited with non-zero code: {}",
+                            subbed_command,
                             code.code().unwrap_or(1)
                         );
                         return false;
@@ -99,18 +101,18 @@ impl Filter {
                 }
 
                 Err(e) => {
-                    eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+                    error!("Filter `{}` failed with error: {}", subbed_command, e);
                     return false;
                 }
             },
 
             Err(e) => {
-                eprintln!("[FAIL] Filter `{subbed_command}` failed with error: {e}");
+                error!("Filter `{}` failed with error: {}", subbed_command, e);
                 return false;
             }
         }
 
-        println!("[INFO] Filter `{subbed_command}` exited successfully");
+        info!("Filter `{}` exited successfully", subbed_command);
 
         true
     }

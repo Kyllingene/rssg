@@ -11,18 +11,19 @@ use std::fs::read_to_string;
 use std::path::Path;
 use std::process::exit;
 
-use sarge::{ArgumentParser, arg, get_flag};
+use log::{error};
+use sarge::{ArgumentParser, arg, get_flag, get_val};
 
 fn main() {
     let mut parser = ArgumentParser::new();
     parser.add(arg!(flag, both, 'h', "help"));
     parser.add(arg!(flag, both, 'c', "compile"));
-    // parser.add(arg!(string, both, 'l', "logfile"));
+    parser.add(arg!(str, both, 'l', "logfile"));
 
     let _args = match parser.parse() {
         Ok(a) => a,
         Err(e) => {
-            eprintln!("[FAIL] Failed to parse arguments: {e}");
+            eprintln!("ERROR: Failed to parse arguments: {}", e);
             exit(1);
         }
     };
@@ -35,21 +36,54 @@ fn main() {
         return;
     }
 
+    let dis = fern::Dispatch::new()
+        // Perform allocation-free log formatting
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {}] {}",
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        // Add blanket level filter -
+        .level(log::LevelFilter::Debug);
+
+    if let Some(i) = get_val!(parser, both, 'l', "logfile") {
+        let path = match fern::log_file(i.get_str()) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("ERROR: failed to establish logging to file: {e}");
+                exit(1);
+            }
+        };
+
+        if let Err(e) = dis.chain(path).apply() {
+            eprintln!("ERROR: failed to establish logging to file: {e}");
+            exit(1);
+        }
+    } else {
+        if let Err(e) = dis.chain(std::io::stdout()).apply() {
+            eprintln!("ERROR: failed to establish logging to stdout: {e}");
+            exit(1);
+        }
+    }
+
     if get_flag!(parser, both, 'c', "compile") {
         if !Path::new("rules.toml").exists() {
-            eprintln!("[FAIL] No `rules.toml` found, aborting");
+            error!("No `rules.toml` found, aborting");
             exit(1);
         }
 
         if !Path::new("content").exists() {
-            eprintln!("[FAIL] No content directory found, aborting");
+            error!("No content directory found, aborting");
             exit(1);
         }
 
         let data = match read_to_string("rules.toml") {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("[FAIL] Failed to read `rules.toml`: {e}");
+                error!("Failed to read `rules.toml`: {}", e);
                 exit(1);
             }
         };
@@ -57,13 +91,13 @@ fn main() {
         let rules = match parse::parse(data) {
             Ok(r) => r,
             Err(e) => {
-                eprintln!("[FAIL] Failed to parse rules: {e}");
+                error!("Failed to parse rules: {}", e);
                 exit(1);
             }
         };
 
         if !build::build(rules) {
-            eprintln!("[FAIL] Build failed");
+            error!("Build failed");
             exit(1);
         }
     }

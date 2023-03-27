@@ -1,6 +1,8 @@
 use std::fs::{copy, create_dir_all};
 use std::{fs, io, path::Path, str::FromStr};
 
+use log::{info, error};
+
 use crate::filepath::FilePath;
 use crate::rule::Rule;
 
@@ -34,15 +36,15 @@ pub fn build(rules: Vec<Rule>) -> bool {
         .map(|f| f.clone().strip_prefix("/"))
         .collect::<Vec<_>>();
 
-    println!("[INFO] Building site");
-    println!("[INFO] Generating data from `content/`");
+    info!("Building site");
+    info!("Generating data from `content/`");
     for file in files {
-        println!("[INFO] Checking file {}", file.full());
+        info!("Checking file {}", file.full());
         for rule in &rules {
             if rule.matches(&file) {
-                println!("[INFO] Found matching rule");
+                info!("Found matching rule");
                 if !rule.exec(file) {
-                    eprintln!("[FAIL] Rule failed, aborting");
+                    error!("Rule failed, aborting");
                     return false;
                 }
 
@@ -51,7 +53,7 @@ pub fn build(rules: Vec<Rule>) -> bool {
         }
     }
 
-    println!("[INFO] Site generation complete, copying `public/`");
+    info!("Site generation complete, copying `public/`");
     let files = visit_dirs(Path::new("public"))
         .unwrap()
         .iter()
@@ -60,7 +62,7 @@ pub fn build(rules: Vec<Rule>) -> bool {
 
     for file in files {
         if let Err(e) = create_dir_all(file.clone().strip_prefix("public").prefix("output").dir()) {
-            eprintln!("[FAIL] Failed to create {}: {e}", file.dir());
+            error!("Failed to create {}: {}", file.dir(), e);
             return false;
         }
 
@@ -68,12 +70,12 @@ pub fn build(rules: Vec<Rule>) -> bool {
             file.full(),
             file.clone().strip_prefix("public").prefix("output").full(),
         ) {
-            eprintln!("[FAIL] Failed to copy {file}: {e}");
+            error!("Failed to copy {file}: {}", e);
             return false;
         }
     }
 
-    println!("[INFO] Done building site, output at `output/`");
+    info!("Done building site, output at `output/`");
 
     true
 }

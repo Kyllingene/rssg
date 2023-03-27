@@ -115,7 +115,7 @@ impl FromStr for FilePath {
         filepath.name = if let Some(name) = path.file_stem() {
             name.to_string_lossy().into_owned()
         } else {
-            return Err("must provide a filename (only provided a directory)");
+            return Err("Must provide a filename (only provided a directory)");
         };
 
         filepath.ext = path

@@ -2,6 +2,7 @@ use std::fs::{copy, create_dir_all, read_to_string, OpenOptions};
 use std::io::Write;
 use std::str::FromStr;
 
+use log::{info, error};
 use regex::Regex;
 use yaml_front_matter::YamlFrontMatter;
 
@@ -44,7 +45,7 @@ impl Rule {
         let data = match read_to_string(&path.full()) {
             Ok(d) => d,
             Err(e) => {
-                eprintln!("[FAIL:{}] Failed to open file {path}: {e}", line!());
+                error!("Failed to open file {}: {}", path, e);
                 return false;
             }
         };
@@ -57,9 +58,9 @@ impl Rule {
         let mut cwpath = tempdir(&format!("{path}-yamlless"), &path);
 
         if let Err(e) = create_dir_all(cwpath.dir()) {
-            eprintln!(
-                "[FAIL:{}] Failed to create parent directories: {e}",
-                line!()
+            error!(
+                "Failed to create parent directories: {}",
+                e
             );
             return false;
         }
@@ -72,12 +73,12 @@ impl Rule {
         {
             Ok(mut f) => {
                 if let Err(e) = f.write_all(data.as_bytes()) {
-                    eprintln!("[FAIL:{}] Failed to write to file {cwpath}: {e}", line!());
+                    error!("Failed to write to file {}: {}", cwpath, e);
                     return false;
                 }
             }
             Err(e) => {
-                eprintln!("[FAIL:{}] Failed to open file {cwpath}: {e}", line!());
+                error!("Failed to open file {}: {}", cwpath, e);
                 return false;
             }
         }
@@ -91,28 +92,28 @@ impl Rule {
         }
 
         for template in &self.templates {
-            println!("[INFO] Applying template file {template} to {cwpath}");
+            info!("Applying template file {} to {}", template, cwpath);
 
             let out = tempdir(template, &cwpath);
 
             if let Err(e) = create_dir_all(out.dir()) {
-                eprintln!(
-                    "[FAIL:{}] Failed to create parent directories: {e}",
-                    line!()
+                error!(
+                    "Failed to create parent directories: {}",
+                    e
                 );
                 return false;
             }
 
             if let Err(e) = create_dir_all(out.dir()) {
-                eprintln!(
-                    "[FAIL:{}] Failed to create tempfile directory structure for template: {e}",
-                    line!()
+                error!(
+                    "Failed to create tempfile directory structure for template: {}",
+                    e
                 );
                 return false;
             }
 
             if let Err(e) = apply_template(template, &cwpath.full(), out.full(), &yaml) {
-                eprintln!("[FAIL:{}] Failed to apply template: {e}", line!());
+                error!("Failed to apply template: {}", e);
                 return false;
             }
 
@@ -122,21 +123,20 @@ impl Rule {
         let out = match FilePath::from_str(&substitute(&self.output, &path)) {
             Ok(f) => f.strip_prefix("content").prefix("output"),
             Err(e) => {
-                eprintln!("[FAIL:{}] Failed to create final file: {e}", line!());
+                error!("Failed to create final file: {}", e);
                 return false;
             }
         };
 
         if let Err(e) = create_dir_all(out.dir()) {
-            eprintln!(
-                "[FAIL:{}] Failed to create final file parent directories: {e}",
-                line!()
+            error!(
+                "Failed to create final file parent directories: {}", e
             );
             return false;
         }
 
         if let Err(e) = copy(cwpath.full(), out.full()) {
-            eprintln!("[FAIL:{}] Failed to finalize file output: {e}", line!());
+            error!("Failed to finalize file output: {}", e);
             return false;
         }
 
