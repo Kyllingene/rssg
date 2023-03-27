@@ -1,4 +1,5 @@
 mod build;
+mod cache;
 mod error;
 mod filepath;
 mod filter;

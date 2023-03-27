@@ -41,6 +41,10 @@ impl Rule {
         self.rule.is_match(&filepath.full())
     }
 
+    pub fn out(&self, path: &FilePath) -> Result<FilePath, &str> {
+        FilePath::from_str(&substitute(&self.output, path))
+    }
+
     pub fn exec(&self, path: FilePath, content: &String, output: &String) -> bool {
         let data = match read_to_string(&path.full()) {
             Ok(d) => d,

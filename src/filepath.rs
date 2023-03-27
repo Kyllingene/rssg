@@ -2,7 +2,7 @@ use std::fmt::Display;
 use std::path::Path;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FilePath {
     dir: Option<String>,
     pub name: String,
