@@ -25,18 +25,13 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
     Ok(files)
 }
 
-pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) -> bool {
-    if let Err(e) = fs::create_dir_all(&output) {
-        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
-            error!("Failed to make `{}/`: {}", output, e);
-            return false;
-        }
-    }
-
-    if let Err(e) = fs::create_dir_all("temp") {
-        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
-            error!("Failed to make `temp/`: {}", e);
-            return false;
+pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, force_recomp: bool) -> bool {
+    if force_recomp {
+        if let Err(e) = remove_file(".rssg-cache") {
+            if !matches!(e.kind(), ErrorKind::NotFound) {
+                error!("Failed to delete cache: {}", e);
+                return false;
+            }
         }
     }
 
@@ -118,6 +113,20 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String) 
                     }
                 }
             }
+        }
+    }
+
+    if let Err(e) = fs::create_dir_all(&output) {
+        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
+            error!("Failed to make `{}/`: {}", output, e);
+            return false;
+        }
+    }
+
+    if let Err(e) = fs::create_dir_all("temp") {
+        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
+            error!("Failed to make `temp/`: {}", e);
+            return false;
         }
     }
 

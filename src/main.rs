@@ -21,6 +21,7 @@ fn main() {
     parser.add(arg!(flag, both, 'c', "compile"));
     parser.add(arg!(str, both, 'l', "logfile"));
     parser.add(arg!(flag, both, 'v', "verbose"));
+    parser.add(arg!(flag, both, 'f', "force"));
 
     parser.add(arg!(str, long, "content"));
     parser.add(arg!(str, long, "output"));
@@ -39,6 +40,8 @@ fn main() {
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
         println!("     -v | --verbose : include debug output");
+        println!("     -f |   --force : force recompilation");
+        println!("                      rebuilds cache");
         println!("          --content : set source directory");
         println!("                      defaults to `content`");
         println!("           --output : set output directory");
@@ -129,7 +132,7 @@ fn main() {
             }
         };
 
-        if !build::build(rules, content, output, public) {
+        if !build::build(rules, content, output, public, get_flag!(parser, both, 'f', "force")) {
             error!("Build failed");
             exit(1);
         }

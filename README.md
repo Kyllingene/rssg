@@ -25,6 +25,8 @@ rssg [options]
      -h |    --help : print this help dialog
      -c | --compile : compile the site
      -v | --verbose : include debug output
+     -f |   --force : force recompilation
+                      rebuilds cache
           --content : set source directory
                       defaults to `content`
            --output : set output directory
