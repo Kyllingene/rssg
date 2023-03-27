@@ -7,7 +7,7 @@ license = "mit"
 authors = ["Kyllingene"]
 description = "A rusty static-site generator leveraging shell commands."
 categories = ["command-line-utilities", "template-engine"]
-keywords = ["ssg", "static-site-generator", "website"]
+keywords = ["ssg", "static-site", "website"]
 
 homepage = "https://github.com/kyllingene/rssg"
 repository = "https://github.com/kyllingene/rssg"
