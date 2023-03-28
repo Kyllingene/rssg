@@ -1,12 +1,14 @@
-use std::fs::{copy, create_dir_all, read_dir, remove_file, remove_dir, remove_dir_all, create_dir};
+use std::fs::{
+    copy, create_dir, create_dir_all, read_dir, remove_dir, remove_dir_all, remove_file,
+};
 use std::io::ErrorKind;
 use std::{fs, io, path::Path, str::FromStr};
 
-use log::{info, error, debug, warn};
+use log::{debug, error, info, warn};
 
+use crate::cache;
 use crate::filepath::FilePath;
 use crate::rule::Rule;
-use crate::cache;
 
 fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
     let mut files = Vec::new();
@@ -25,7 +27,13 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
     Ok(files)
 }
 
-pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, force_recomp: bool) -> bool {
+pub fn build(
+    rules: Vec<Rule>,
+    content: String,
+    output: String,
+    public: String,
+    force_recomp: bool,
+) -> bool {
     if force_recomp {
         if let Err(e) = remove_file(".rssg-cache") {
             if e.kind() != ErrorKind::NotFound {
@@ -35,14 +43,12 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
         }
     }
 
-    let content_files = visit_dirs(Path::new(&content))
-        .unwrap();
-    let public_files = visit_dirs(Path::new(&public))
-        .unwrap();
-    let template_files = visit_dirs(Path::new("templates"))
-        .unwrap();
+    let content_files = visit_dirs(Path::new(&content)).unwrap();
+    let public_files = visit_dirs(Path::new(&public)).unwrap();
+    let template_files = visit_dirs(Path::new("templates")).unwrap();
 
-    let files = content_files.iter()
+    let files = content_files
+        .iter()
         .chain(public_files.iter())
         .chain(template_files.iter())
         .collect::<Vec<_>>();
@@ -51,15 +57,14 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
     let modified = cache::modified(&file_cache, &content, &public, &String::from("templates"))
         .unwrap_or_default();
 
-    let template_modified = modified.iter()
-        .any(|s| s.dir().starts_with("templates/"));
+    let template_modified = modified.iter().any(|s| s.dir().starts_with("templates/"));
 
     info!("Building site");
     info!("Removing outdated files");
     if file_cache.is_empty() {
         _ = remove_dir_all(&output);
         _ = remove_dir_all("temp");
-    
+
         if let Err(e) = create_dir(Path::new(&output)) {
             error!("Failed to create `{}`: {}", output, e);
             return false;
@@ -82,7 +87,11 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
                     }
 
                     if let Err(e) = remove_dir(Path::new(&path.dir())) {
-                        warn!("Failed to delete outdated directory `{}/`: {}", path.dir(), e);
+                        warn!(
+                            "Failed to delete outdated directory `{}/`: {}",
+                            path.dir(),
+                            e
+                        );
                     } else {
                         info!("Deleted outdated directory `{}`", path.dir());
                     }
@@ -96,13 +105,21 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
                             if let Ok(path) = rule.out(file) {
                                 let path = path.strip_prefix(&content).prefix(&output);
                                 if let Err(e) = remove_file(Path::new(&path.full())) {
-                                    warn!("Failed to delete outdated file `{}`: {}", path.full(), e);
+                                    warn!(
+                                        "Failed to delete outdated file `{}`: {}",
+                                        path.full(),
+                                        e
+                                    );
                                 } else {
                                     info!("Deleted outdated file `{}`", path.full());
                                 }
 
                                 if let Err(e) = remove_dir(Path::new(&path.dir())) {
-                                    warn!("Failed to delete outdated directory `{}/`: {}", path.dir(), e);
+                                    warn!(
+                                        "Failed to delete outdated directory `{}/`: {}",
+                                        path.dir(),
+                                        e
+                                    );
                                 } else {
                                     info!("Deleted outdated directory `{}`", path.dir());
                                 }

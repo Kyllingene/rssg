@@ -1,7 +1,7 @@
 use std::fs::create_dir_all;
 use std::{process::Command, str::FromStr};
 
-use log::{error, debug};
+use log::{debug, error};
 use regex::Regex;
 use serde::Deserialize;
 
@@ -32,7 +32,10 @@ impl Filter {
         match FilePath::from_str(&substitute(self.outfile.as_ref().unwrap(), path)) {
             Ok(new) => Ok(tempdir(&self.command, &new)),
 
-            Err(e) => Err(format!("Filter outfile {} invalid: {e}", self.outfile.as_ref().unwrap())),
+            Err(e) => Err(format!(
+                "Filter outfile {} invalid: {e}",
+                self.outfile.as_ref().unwrap()
+            )),
         }
     }
 
@@ -57,7 +60,10 @@ impl Filter {
             };
 
             if let Err(e) = create_dir_all(out.dir()) {
-                error!("Failed to create tempfile directory structure for filter: {}", e);
+                error!(
+                    "Failed to create tempfile directory structure for filter: {}",
+                    e
+                );
                 return false;
             }
 
@@ -70,7 +76,11 @@ impl Filter {
         let re = Regex::new("([^\"]+\"|[^\\s]+)").unwrap();
         let quotes = Regex::new("\"(.+)\"").unwrap();
 
-        let subbed_command = substitute(&self.command, path).replace("{outfile}", &out.map(|f| f.full()).unwrap_or_else(|| String::from("null")));
+        let subbed_command = substitute(&self.command, path).replace(
+            "{outfile}",
+            &out.map(|f| f.full())
+                .unwrap_or_else(|| String::from("null")),
+        );
 
         let mut args = re.captures_iter(&subbed_command);
 

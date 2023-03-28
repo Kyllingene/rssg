@@ -29,8 +29,7 @@ pub fn parse_rule(data: &toml::Table, filter_map: &HashMap<String, Filter>) -> P
         }
     }
 
-    let mut rule =
-        Rule::new(rule, output.clone()).map_err(|_| ParseError::BadRegex(rule.clone()))?;
+    let mut rule = Rule::new(rule, output).map_err(|_| ParseError::BadRegex(rule.clone()))?;
     rule.filter_all(filters);
     rule.template_all(templates.into_iter().cloned().collect());
 

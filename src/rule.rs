@@ -2,7 +2,7 @@ use std::fs::{copy, create_dir_all, read_to_string, OpenOptions};
 use std::io::Write;
 use std::str::FromStr;
 
-use log::{error, debug};
+use log::{debug, error};
 use regex::Regex;
 use yaml_front_matter::YamlFrontMatter;
 
@@ -71,14 +71,11 @@ impl Rule {
                     data
                 }
             };
-        
+
             cwpath = tempdir(&format!("{path}-yamlless"), &path);
 
             if let Err(e) = create_dir_all(cwpath.dir()) {
-                error!(
-                    "Failed to create parent directories: {}",
-                    e
-                );
+                error!("Failed to create parent directories: {}", e);
                 return false;
             }
 
@@ -120,10 +117,7 @@ impl Rule {
                 let out = tempdir(template, &cwpath);
 
                 if let Err(e) = create_dir_all(out.dir()) {
-                    error!(
-                        "Failed to create parent directories: {}",
-                        e
-                    );
+                    error!("Failed to create parent directories: {}", e);
                     return false;
                 }
 
@@ -135,7 +129,9 @@ impl Rule {
                     return false;
                 }
 
-                if let Err(e) = apply_template(template, &cwpath.full(), out.full(), &yaml.clone().unwrap()) {
+                if let Err(e) =
+                    apply_template(template, &cwpath.full(), out.full(), &yaml.clone().unwrap())
+                {
                     error!("Failed to apply template: {}", e);
                     return false;
                 }
@@ -152,9 +148,7 @@ impl Rule {
             };
 
             if let Err(e) = create_dir_all(out.dir()) {
-                error!(
-                    "Failed to create final file parent directories: {}", e
-                );
+                error!("Failed to create final file parent directories: {}", e);
                 return false;
             }
 

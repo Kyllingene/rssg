@@ -8,13 +8,13 @@ mod rule;
 mod tempfile;
 mod template;
 
-use std::fs::{read_to_string, remove_file, remove_dir_all};
+use std::fs::{read_to_string, remove_dir_all, remove_file};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::process::exit;
 
 use log::{error, info};
-use sarge::{ArgumentParser, arg, get_flag, get_val};
+use sarge::{arg, get_flag, get_val, ArgumentParser};
 
 fn main() {
     let mut parser = ArgumentParser::new();
@@ -38,7 +38,10 @@ fn main() {
     };
 
     if get_flag!(parser, both, 'h', "help") {
-        println!("{} [options]", parser.binary.unwrap_or_else(|| String::from("rssg")));
+        println!(
+            "{} [options]",
+            parser.binary.unwrap_or_else(|| String::from("rssg"))
+        );
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
         println!("     -v | --verbose : include debug output");
@@ -160,7 +163,13 @@ fn main() {
             }
         };
 
-        if !build::build(rules, content, output, public, get_flag!(parser, both, 'f', "force")) {
+        if !build::build(
+            rules,
+            content,
+            output,
+            public,
+            get_flag!(parser, both, 'f', "force"),
+        ) {
             error!("Build failed");
             exit(1);
         }

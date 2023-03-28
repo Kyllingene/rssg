@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::fs::{read_dir, read_to_string, OpenOptions, remove_file, File};
+use std::fs::{read_dir, read_to_string, remove_file, File, OpenOptions};
 use std::io::Write;
 use std::{io, path::Path, str::FromStr};
 
 use log::warn;
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 use crate::filepath::FilePath;
 
@@ -41,7 +41,7 @@ pub fn hash_file(file: &Path) -> Option<(FilePath, u128)> {
 
     let file = match FilePath::from_str(&file.display().to_string()) {
         Ok(f) => f,
-        Err(_) => return None
+        Err(_) => return None,
     };
 
     Some((file, data))
@@ -65,7 +65,12 @@ pub fn write_cache(path: &Path, cache: HashMap<FilePath, u128>) {
         cache_data.push_str(format!("{file}  {data}\n").as_str());
     }
 
-    match OpenOptions::new().write(true).truncate(true).create(true).open(path) {
+    match OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(path)
+    {
         Ok(mut file) => {
             if let Err(e) = file.write_all(cache_data.as_bytes()) {
                 warn!("Failed to write cache file at {}: {}", path.display(), e);
@@ -117,15 +122,17 @@ pub fn read_cache(path: &Path) -> HashMap<FilePath, u128> {
     cache
 }
 
-pub fn modified(cache: &HashMap<FilePath, u128>, content: &String, public: &String, templates: &String) -> Option<Vec<FilePath>> {
-    let mut files = visit_dirs(Path::new(content))
-        .unwrap();
+pub fn modified(
+    cache: &HashMap<FilePath, u128>,
+    content: &String,
+    public: &String,
+    templates: &String,
+) -> Option<Vec<FilePath>> {
+    let mut files = visit_dirs(Path::new(content)).unwrap();
 
-    files.append(&mut visit_dirs(Path::new(public))
-        .unwrap());
+    files.append(&mut visit_dirs(Path::new(public)).unwrap());
 
-    files.append(&mut visit_dirs(Path::new(templates))
-        .unwrap());
+    files.append(&mut visit_dirs(Path::new(templates)).unwrap());
 
     let mut modified = Vec::with_capacity(files.len() / 2 + 1);
     for path in files {
