@@ -33,6 +33,8 @@ rssg [options]
                       defaults to `output`
            --public : set public directory
                       defaults to `public`
+            --clean : cleans the `output`
+                      and `temp` directories
 ```
 
 ### File structure
@@ -111,6 +113,12 @@ filters = [
 
 *NOTE*: Filter outfiles are stored in the `temp` directory during generation, 
 with unique directory names. This is irrelevant for site development.
+
+Filters can also omit the `outfile` property. Filters like this do not output
+any information; as far as the other filters are concerned, they never existed.
+It is possible for such a filter to directly mutate the output from a previous
+filter, but this is inadvisable. These filters are intended for things like
+logging and generating sitemaps.
 
 ### Templates
 
@@ -193,9 +201,14 @@ templates = ["default.html"]
 output = "{dir}/{name}/index.html"
 ```
 
+Rules, like filters, can omit the `output` property. In this case, no templates
+will be applied, and no files/directories created. The same warning goes for
+rules as for filters; you really shouldn't mutate data from inside a no-output
+rule.
+
 These are just the recommended style guidelines. Any other way to create a TOML 
-list called `rules`, or `filters`, will work. This is just the 
-cleanest way. If you need to change it up for whatever reason, check out the
+list called `rules`, or `filters`, will work. This is just the cleanest way. If
+you need to change it up for whatever reason, check out the official
 [TOML website](https://toml.io).
 
 ### Contributing

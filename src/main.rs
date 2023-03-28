@@ -8,11 +8,12 @@ mod rule;
 mod tempfile;
 mod template;
 
-use std::fs::read_to_string;
+use std::fs::{read_to_string, remove_file, remove_dir_all};
+use std::io::ErrorKind;
 use std::path::Path;
 use std::process::exit;
 
-use log::error;
+use log::{error, info};
 use sarge::{ArgumentParser, arg, get_flag, get_val};
 
 fn main() {
@@ -26,6 +27,7 @@ fn main() {
     parser.add(arg!(str, long, "content"));
     parser.add(arg!(str, long, "output"));
     parser.add(arg!(str, long, "public"));
+    parser.add(arg!(flag, long, "clean"));
 
     let _args = match parser.parse() {
         Ok(a) => a,
@@ -48,6 +50,8 @@ fn main() {
         println!("                      defaults to `output`");
         println!("           --public : set public directory");
         println!("                      defaults to `public`");
+        println!("            --clean : cleans the `output`");
+        println!("                      and `temp` directories");
 
         return;
     }
@@ -87,6 +91,36 @@ fn main() {
         exit(1);
     }
 
+    let output = if let Some(c) = get_val!(parser, long, "output") {
+        c.get_str()
+    } else {
+        String::from("output")
+    };
+
+    if get_flag!(parser, long, "clean") {
+        info!("Cleaning `{}` and `temp/`", output);
+        if let Err(e) = remove_dir_all(Path::new(&output)) {
+            if e.kind() != ErrorKind::NotFound {
+                error!("Failed to remove `{}`: {}", output, e);
+                exit(1);
+            }
+        }
+
+        if let Err(e) = remove_dir_all(Path::new("temp")) {
+            if e.kind() != ErrorKind::NotFound {
+                error!("Failed to remove `temp/`: {}", e);
+                exit(1);
+            }
+        }
+
+        if let Err(e) = remove_file(".rssg-cache") {
+            if e.kind() != ErrorKind::NotFound {
+                error!("Failed to remove `.rssg-cache`: {}", e);
+                exit(1);
+            }
+        }
+    }
+
     if get_flag!(parser, both, 'c', "compile") {
         if !Path::new("rules.toml").exists() {
             error!("No `rules.toml` found, aborting");
@@ -97,12 +131,6 @@ fn main() {
             c.get_str()
         } else {
             String::from("content")
-        };
-
-        let output = if let Some(c) = get_val!(parser, long, "output") {
-            c.get_str()
-        } else {
-            String::from("output")
         };
 
         let public = if let Some(c) = get_val!(parser, long, "public") {

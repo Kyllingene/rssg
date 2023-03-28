@@ -12,7 +12,11 @@ pub fn parse_filter(filter: &toml::Table) -> ParseResult<(Filter, Option<String>
     };
 
     let command = field!(filter, command, String).clone();
-    let outfile = field!(filter, outfile, String).clone();
+    let outfile = if let Some(toml::Value::String(o)) = &filter.get("outfile") {
+        Some(o.clone())
+    } else {
+        None
+    };
 
     Ok((Filter::new(command, outfile), name))
 }

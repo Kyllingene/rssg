@@ -20,20 +20,24 @@ pub fn substitute(string: &str, path: &FilePath) -> String {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Filter {
     command: String,
-    outfile: String,
+    outfile: Option<String>,
 }
 
 impl Filter {
-    pub fn new(command: String, outfile: String) -> Self {
+    pub fn new(command: String, outfile: Option<String>) -> Self {
         Self { command, outfile }
     }
 
     pub fn tempdir(&self, path: &FilePath) -> Result<FilePath, String> {
-        match FilePath::from_str(&substitute(&self.outfile, path)) {
+        match FilePath::from_str(&substitute(self.outfile.as_ref().unwrap(), path)) {
             Ok(new) => Ok(tempdir(&self.command, &new)),
 
-            Err(e) => Err(format!("Filter outfile {} invalid: {e}", self.outfile)),
+            Err(e) => Err(format!("Filter outfile {} invalid: {e}", self.outfile.as_ref().unwrap())),
         }
+    }
+
+    pub fn has_outfile(&self) -> bool {
+        self.outfile.is_some()
     }
 
     // Execute the filter.
@@ -42,25 +46,31 @@ impl Filter {
     // Returns the frontmatter, if any.
     pub fn exec(&self, path: &FilePath) -> bool {
         // If outfile is an invalid path, then don't bother running the filter
-        let out = match self.tempdir(path) {
-            Ok(new) => new,
+        let out = if self.has_outfile() {
+            let out = match self.tempdir(path) {
+                Ok(new) => new,
 
-            Err(e) => {
-                error!("{}", e);
+                Err(e) => {
+                    error!("{}", e);
+                    return false;
+                }
+            };
+
+            if let Err(e) = create_dir_all(out.dir()) {
+                error!("Failed to create tempfile directory structure for filter: {}", e);
                 return false;
             }
-        };
 
-        if let Err(e) = create_dir_all(out.dir()) {
-            error!("Failed to create tempfile directory structure for filter: {}", e);
-            return false;
-        }
+            Some(out)
+        } else {
+            None
+        };
 
         // Split command on non-quoted whitespace, removing the quotes
         let re = Regex::new("([^\"]+\"|[^\\s]+)").unwrap();
         let quotes = Regex::new("\"(.+)\"").unwrap();
 
-        let subbed_command = substitute(&self.command, path).replace("{outfile}", &out.full());
+        let subbed_command = substitute(&self.command, path).replace("{outfile}", &out.map(|f| f.full()).unwrap_or_else(|| String::from("null")));
 
         let mut args = re.captures_iter(&subbed_command);
 
@@ -74,11 +84,6 @@ impl Filter {
         .to_string();
 
         command = quotes.replace_all(&command, "$1").to_string();
-
-        if let Err(e) = create_dir_all(out.dir()) {
-            error!("Failed to create parent directories: {}", e);
-            return false;
-        }
 
         debug!("Running filter `{}`", subbed_command);
         match Command::new(command)

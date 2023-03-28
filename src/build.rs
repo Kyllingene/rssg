@@ -28,7 +28,7 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
 pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, force_recomp: bool) -> bool {
     if force_recomp {
         if let Err(e) = remove_file(".rssg-cache") {
-            if !matches!(e.kind(), ErrorKind::NotFound) {
+            if e.kind() != ErrorKind::NotFound {
                 error!("Failed to delete cache: {}", e);
                 return false;
             }
@@ -62,10 +62,12 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
     
         if let Err(e) = create_dir(Path::new(&output)) {
             error!("Failed to create `{}`: {}", output, e);
+            return false;
         }
 
         if let Err(e) = create_dir(Path::new("temp")) {
             error!("Failed to create `temp/`: {}", e);
+            return false;
         }
     } else {
         for file in file_cache.clone().keys() {
@@ -117,14 +119,14 @@ pub fn build(rules: Vec<Rule>, content: String, output: String, public: String, 
     }
 
     if let Err(e) = fs::create_dir_all(&output) {
-        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
+        if e.kind() != ErrorKind::AlreadyExists {
             error!("Failed to make `{}/`: {}", output, e);
             return false;
         }
     }
 
     if let Err(e) = fs::create_dir_all("temp") {
-        if !matches!(e.kind(), ErrorKind::AlreadyExists) {
+        if e.kind() != ErrorKind::AlreadyExists {
             error!("Failed to make `temp/`: {}", e);
             return false;
         }

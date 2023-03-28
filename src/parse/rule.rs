@@ -10,7 +10,11 @@ pub fn parse_rule(data: &toml::Table, filter_map: &HashMap<String, Filter>) -> P
     let rule = field!(data, rule, String);
     let fs = field!(data, filters, Array);
     let templates = array!(data, templates, String);
-    let output = field!(data, output, String);
+    let output = if let Some(toml::Value::String(o)) = &data.get("output") {
+        Some(o.clone())
+    } else {
+        None
+    };
 
     let mut filters = Vec::new();
     for filter in fs {
