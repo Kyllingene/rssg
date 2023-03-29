@@ -1,5 +1,6 @@
 mod build;
 mod cache;
+mod command;
 mod error;
 mod filepath;
 mod filter;
@@ -155,7 +156,7 @@ fn main() {
             }
         };
 
-        let rules = match parse::parse(data) {
+        let (rules, commands) = match parse::parse(data) {
             Ok(r) => r,
             Err(e) => {
                 error!("Failed to parse rules: {}", e);
@@ -165,6 +166,7 @@ fn main() {
 
         if !build::build(
             rules,
+            commands,
             content,
             output,
             public,

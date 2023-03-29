@@ -101,7 +101,13 @@ impl Rule {
         }
 
         for filter in &self.filters {
-            if !filter.exec(&cwpath) {
+            let given_path = if filter.give_original {
+                &path
+            } else {
+                &cwpath
+            };
+
+            if !filter.exec(given_path) {
                 return false;
             }
 

@@ -18,7 +18,10 @@ pub fn parse_filter(filter: &toml::Table) -> ParseResult<(Filter, Option<String>
         None
     };
 
-    Ok((Filter::new(command, outfile), name))
+    let give_original = matches!(&filter.get("give_original"), Some(toml::Value::Boolean(true)))
+        && outfile.is_none();
+
+    Ok((Filter::new(command, outfile, give_original), name))
 }
 
 pub fn parse_filters(filters: &Vec<toml::Value>) -> ParseResult<HashMap<String, Filter>> {

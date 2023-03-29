@@ -1,10 +1,10 @@
 use std::fs::create_dir_all;
-use std::{process::Command, str::FromStr};
+use std::str::FromStr;
 
 use log::{debug, error};
-use regex::Regex;
 use serde::Deserialize;
 
+use crate::command::{Command, ExitStatus};
 use crate::filepath::FilePath;
 use crate::tempfile::tempdir;
 
@@ -14,23 +14,29 @@ pub fn substitute(string: &str, path: &FilePath) -> String {
         .replace("{dir}", &path.dir())
         .replace("{name}", &path.name())
         .replace("{ext}", &path.ext())
-        .replace("{\\{", "{{")
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Filter {
-    command: String,
+    command: Command,
     outfile: Option<String>,
+    pub give_original: bool
 }
 
 impl Filter {
-    pub fn new(command: String, outfile: Option<String>) -> Self {
-        Self { command, outfile }
+    pub fn new(command: String, outfile: Option<String>, give_original: bool) -> Self {
+        Self {
+            command: Command::new(command),
+            outfile,
+            give_original
+        }
     }
 
     pub fn tempdir(&self, path: &FilePath) -> Result<FilePath, String> {
-        match FilePath::from_str(&substitute(self.outfile.as_ref().unwrap(), path)) {
-            Ok(new) => Ok(tempdir(&self.command, &new)),
+        match FilePath::from_str(
+            &substitute(self.outfile.as_ref().unwrap(), path).replace("{\\{", "{{"),
+        ) {
+            Ok(new) => Ok(tempdir(self.command.str(), &new)),
 
             Err(e) => Err(format!(
                 "Filter outfile {} invalid: {e}",
@@ -72,63 +78,28 @@ impl Filter {
             None
         };
 
-        // Split command on non-quoted whitespace, removing the quotes
-        let re = Regex::new("([^\"]+\"|[^\\s]+)").unwrap();
-        let quotes = Regex::new("\"(.+)\"").unwrap();
-
-        let subbed_command = substitute(&self.command, path).replace(
-            "{outfile}",
-            &out.map(|f| f.full())
-                .unwrap_or_else(|| String::from("null")),
-        );
-
-        let mut args = re.captures_iter(&subbed_command);
-
-        let mut command = match args.next() {
-            Some(c) => c,
-            None => {
-                error!("`{}` is not a valid command", self.command);
-                return false;
+        debug!("Running filter `{}`", self.command.str());
+        match self.command.exec(Some(path), out) {
+            ExitStatus::Success(cmd) => {
+                debug!("Filter `{}` exited successfully", cmd);
+                true
             }
-        }[0]
-        .to_string();
 
-        command = quotes.replace_all(&command, "$1").to_string();
-
-        debug!("Running filter `{}`", subbed_command);
-        match Command::new(command)
-            .args(
-                args.map(|s| quotes.replace_all(&s[0], "$1").to_string())
-                    .collect::<Vec<_>>(),
-            )
-            .spawn()
-        {
-            Ok(mut child) => match child.wait() {
-                Ok(code) => {
-                    if !code.success() {
-                        error!(
-                            "Filter `{}` exited with non-zero code: {}",
-                            subbed_command,
-                            code.code().unwrap_or(1)
-                        );
-                        return false;
-                    }
-                }
-
-                Err(e) => {
-                    error!("Filter `{}` failed with error: {}", subbed_command, e);
-                    return false;
-                }
-            },
-
-            Err(e) => {
-                error!("Filter `{}` failed with error: {}", subbed_command, e);
-                return false;
+            ExitStatus::InvalidCommand(cmd) => {
+                error!("Filter `{}` failed: not a valid command", cmd);
+                false
+            }
+            ExitStatus::NonZero(cmd, code) => {
+                error!(
+                    "Filter `{}` failed: exited with non-zero code {}",
+                    cmd, code
+                );
+                false
+            }
+            ExitStatus::Failed(cmd, e) => {
+                error!("Filter `{}` failed: {}", cmd, e);
+                false
             }
         }
-
-        debug!("Filter `{}` exited successfully", subbed_command);
-
-        true
     }
 }

@@ -7,6 +7,7 @@ use std::{fs, io, path::Path, str::FromStr};
 use log::{debug, error, info, warn};
 
 use crate::cache;
+use crate::command::{Command, ExitStatus};
 use crate::filepath::FilePath;
 use crate::rule::Rule;
 
@@ -29,11 +30,36 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
 
 pub fn build(
     rules: Vec<Rule>,
+    commands: (Vec<Command>, Vec<Command>),
     content: String,
     output: String,
     public: String,
     force_recomp: bool,
 ) -> bool {
+    for command in commands.0 {
+        match command.exec(None, None) {
+            ExitStatus::Success(cmd) => {
+                debug!("Pre-command `{}` exited successfully", cmd);
+            }
+
+            ExitStatus::InvalidCommand(cmd) => {
+                error!("Pre-command `{}` failed: not a valid command", cmd);
+                return false;
+            }
+            ExitStatus::NonZero(cmd, code) => {
+                error!(
+                    "Pre-command `{}` failed: exited with non-zero code {}",
+                    cmd, code
+                );
+                return false;
+            }
+            ExitStatus::Failed(cmd, e) => {
+                error!("Pre-command `{}` failed: {}", cmd, e);
+                return false;
+            }
+        }
+    }
+
     if force_recomp {
         if let Err(e) = remove_file(".rssg-cache") {
             if e.kind() != ErrorKind::NotFound {
@@ -207,6 +233,30 @@ pub fn build(
 
     debug!("Writing cache");
     cache::write_cache(Path::new(".rssg-cache"), file_cache);
+
+    for command in commands.1 {
+        match command.exec(None, None) {
+            ExitStatus::Success(cmd) => {
+                debug!("Post-command `{}` exited successfully", cmd);
+            }
+
+            ExitStatus::InvalidCommand(cmd) => {
+                error!("Post-command `{}` failed: not a valid command", cmd);
+                return false;
+            }
+            ExitStatus::NonZero(cmd, code) => {
+                error!(
+                    "Post-command `{}` failed: exited with non-zero code {}",
+                    cmd, code
+                );
+                return false;
+            }
+            ExitStatus::Failed(cmd, e) => {
+                error!("Post-command `{}` failed: {}", cmd, e);
+                return false;
+            }
+        }
+    }
 
     true
 }

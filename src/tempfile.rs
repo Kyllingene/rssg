@@ -7,7 +7,7 @@ use crate::filepath::FilePath;
 //   source: `default.html`
 //     file: `content/home/index.html`
 //   output: `temp/8264099790966940254/index.html`
-pub fn tempdir(source: &String, filepath: &FilePath) -> FilePath {
+pub fn tempdir(source: &str, filepath: &FilePath) -> FilePath {
     let mut s = DefaultHasher::new();
     source.hash(&mut s);
     filepath.full().hash(&mut s);
