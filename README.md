@@ -54,7 +54,7 @@ my_site/
 ```
 
 All your pages go into the `content` directory. These files will be processed 
-by the `rules.toml` (more about that below) and optionally run through 
+by the `rules.toml` (more about that below) which might run them through 
 templates in the `templates` directory. The results are placed into the 
 `output` directory. Any and all files in the `public` directory get copied into 
 the output without any modifications, preserving directory structure.
@@ -70,22 +70,23 @@ rules.
 ### Filters
 
 Filters take an input file, run a command (probably to change the file), and 
-output a file. An example command might be `pandoc {full} -o {outfile}`. In 
-this example, two substitutions are made: first, `{full}` gets replaced with 
-the input files' full path; second, `{outfile}` gets replaced with the output 
-file of the filter. After substitution, it might look something like this: 
+output a file. A command might look like `pandoc {full} -o {outfile}`. In this
+example, two substitutions are made: first, `{full}` gets replaced with the
+input files' full path; second, `{outfile}` gets replaced with the output file
+of the filter. After substitution, it might look something like this: 
 `pandoc content/index.md -o temp/<hash>/index.html`.
 
 All filters require an output file. This gets substituted, then substituted for 
 `{outfile}` in the command. The valid substitutions are as follows:
-    - `{full}`: The full path to the input file.
-    - `{dir}`: The parent directories of the input file.
-    - `{name}`: The filename of the input file (minus extension).
-    - `{ext}`: The extension of the input file.
+ - `{full}`: The full path to the input file.
+ - `{dir}`: The parent directories of the input file.
+ - `{name}`: The filename of the input file (minus extension).
+ - `{ext}`: The extension of the input file.
 
 In the `rules.toml`, filters can be in a list at the top-level of the file. 
-Here's an example that runs the file through `pandoc`, then outputs it to it's 
-old location (with extension changed):
+Here's an example that runs the file through `pandoc`, then outputs it without
+changing it's path (but updating the extension):
+
 ```toml
 [[filters]]
 # The name of the filter, to use in rules
@@ -126,9 +127,9 @@ Templates are files that you can use encapsulate other files. For example, you
 might have a `default.html` template that contains a header and footer to wrap 
 your page content in. They reside in the `templates` directory, and have some 
 substitution rules of their own:
-    - `{{data}}`: The full data of the page you are embedding.
-    - `{{version}}`: The version of `rssg` used to compile the page.
-    - `{{data.<key>}}`: Data from the content file's frontmatter.
+ - `{{data}}`: The full data of the page you are embedding.
+ - `{{version}}`: The version of `rssg` used to compile the page.
+ - `{{data.<key>}}`: Data from the content file's frontmatter.
 
 Content files can also have YAML frontmatter, to be included in the template. 
 For example, you might have a `title` key in each page, and a `title` element 
@@ -136,7 +137,7 @@ in the template that includes the key. Frontmatter is enclosed on both sides by
 triple-dashes (`---`) and *must* be at the start. Here's an example (assuming a 
 very basic markdown-to-html filter):
 
-`index.md`
+`input.md`
 ```md
 ---
 title: Homepage
