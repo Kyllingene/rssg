@@ -67,9 +67,9 @@ impl Command {
 
         let args = args
             .map(|s| {
-                quotes.replace_all(&s.unwrap()[0], "$1")
+                quotes
+                    .replace_all(&s.unwrap()[0], "$1")
                     .replace("\\\"", "\"")
-                    .to_string()
             })
             .collect::<Vec<_>>();
 

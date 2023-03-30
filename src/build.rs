@@ -1,6 +1,4 @@
-use std::fs::{
-    copy, create_dir_all, read_dir, remove_dir, remove_dir_all, remove_file,
-};
+use std::fs::{copy, create_dir_all, read_dir, remove_dir, remove_dir_all, remove_file};
 use std::io::ErrorKind;
 use std::{fs, io, path::Path, str::FromStr};
 
