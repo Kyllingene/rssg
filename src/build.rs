@@ -1,5 +1,5 @@
 use std::fs::{
-    copy, create_dir, create_dir_all, read_dir, remove_dir, remove_dir_all, remove_file,
+    copy, create_dir_all, read_dir, remove_dir, remove_dir_all, remove_file,
 };
 use std::io::ErrorKind;
 use std::{fs, io, path::Path, str::FromStr};
@@ -91,12 +91,12 @@ pub fn build(
         _ = remove_dir_all(&output);
         _ = remove_dir_all("temp");
 
-        if let Err(e) = create_dir(Path::new(&output)) {
+        if let Err(e) = create_dir_all(Path::new(&output)) {
             error!("Failed to create `{}`: {}", output, e);
             return false;
         }
 
-        if let Err(e) = create_dir(Path::new("temp")) {
+        if let Err(e) = create_dir_all(Path::new("temp")) {
             error!("Failed to create `temp/`: {}", e);
             return false;
         }
