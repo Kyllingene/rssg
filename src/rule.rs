@@ -2,8 +2,8 @@ use std::fs::{copy, create_dir_all, read_to_string, OpenOptions};
 use std::io::Write;
 use std::str::FromStr;
 
+use fancy_regex::Regex;
 use log::{debug, error};
-use regex::Regex;
 use yaml_front_matter::YamlFrontMatter;
 
 use crate::filepath::FilePath;
@@ -20,7 +20,7 @@ pub struct Rule {
 }
 
 impl Rule {
-    pub fn new(rule: &str, output: Option<String>) -> Result<Self, regex::Error> {
+    pub fn new(rule: &str, output: Option<String>) -> Result<Self, fancy_regex::Error> {
         Ok(Self {
             rule: Regex::new(rule)?,
             filters: Vec::new(),
@@ -38,7 +38,7 @@ impl Rule {
     }
 
     pub fn matches(&self, filepath: &FilePath) -> bool {
-        self.rule.is_match(&filepath.full())
+        self.rule.is_match(&filepath.full()).unwrap()
     }
 
     pub fn has_output(&self) -> bool {
@@ -101,11 +101,7 @@ impl Rule {
         }
 
         for filter in &self.filters {
-            let given_path = if filter.give_original {
-                &path
-            } else {
-                &cwpath
-            };
+            let given_path = if filter.give_original { &path } else { &cwpath };
 
             if !filter.exec(given_path) {
                 return false;

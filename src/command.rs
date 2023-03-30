@@ -1,7 +1,7 @@
 use std::process;
 
+use fancy_regex::Regex;
 use log::debug;
-use regex::Regex;
 use serde::{de::Visitor, Deserialize};
 
 use crate::filepath::FilePath;
@@ -40,8 +40,8 @@ impl Command {
 
     pub fn exec(&self, path: Option<&FilePath>, outfile: Option<FilePath>) -> ExitStatus {
         // Split command on non-quoted whitespace, removing the quotes
-        let re = Regex::new("([^\"]+\"|[^\\s]+)").unwrap();
-        let quotes = Regex::new("\"(.+)\"").unwrap();
+        let re = Regex::new("(\".*?(?<!\\\\)\"|[^ ])*").unwrap();
+        let quotes = Regex::new("^\"(.*)\"$").unwrap();
 
         let subbed_command = if let Some(path) = path {
             if let Some(out) = outfile {
@@ -55,10 +55,9 @@ impl Command {
         .replace("{\\{", "{{");
 
         let mut args = re.captures_iter(&subbed_command);
-
         let mut command = match args.next() {
-            Some(c) => c,
-            None => {
+            Some(Ok(c)) => c,
+            Some(Err(_)) | None => {
                 return ExitStatus::InvalidCommand(subbed_command);
             }
         }[0]
@@ -66,14 +65,16 @@ impl Command {
 
         command = quotes.replace_all(&command, "$1").to_string();
 
-        debug!("Running command `{}`", subbed_command);
-        match process::Command::new(command)
-            .args(
-                args.map(|s| quotes.replace_all(&s[0], "$1").to_string())
-                    .collect::<Vec<_>>(),
-            )
-            .spawn()
-        {
+        let args = args
+            .map(|s| {
+                quotes.replace_all(&s.unwrap()[0], "$1")
+                    .replace("\\\"", "\"")
+                    .to_string()
+            })
+            .collect::<Vec<_>>();
+
+        debug!("Running command `{}` (full `{}`)", command, subbed_command);
+        match process::Command::new(command).args(args).spawn() {
             Ok(mut child) => match child.wait() {
                 Ok(code) => {
                     if !code.success() {

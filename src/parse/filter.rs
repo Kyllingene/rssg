@@ -18,8 +18,10 @@ pub fn parse_filter(filter: &toml::Table) -> ParseResult<(Filter, Option<String>
         None
     };
 
-    let give_original = matches!(&filter.get("give_original"), Some(toml::Value::Boolean(true)))
-        && outfile.is_none();
+    let give_original = matches!(
+        &filter.get("give_original"),
+        Some(toml::Value::Boolean(true))
+    ) && outfile.is_none();
 
     Ok((Filter::new(command, outfile, give_original), name))
 }

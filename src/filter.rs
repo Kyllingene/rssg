@@ -20,7 +20,7 @@ pub fn substitute(string: &str, path: &FilePath) -> String {
 pub struct Filter {
     command: Command,
     outfile: Option<String>,
-    pub give_original: bool
+    pub give_original: bool,
 }
 
 impl Filter {
@@ -28,7 +28,7 @@ impl Filter {
         Self {
             command: Command::new(command),
             outfile,
-            give_original
+            give_original,
         }
     }
 
