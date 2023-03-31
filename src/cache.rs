@@ -36,7 +36,7 @@ pub fn hash_file(file: &Path) -> Option<(FilePath, u128)> {
     let hash = hasher.finalize();
     let mut data: u128 = 0;
     for (i, byte) in hash.iter().enumerate() {
-        data |= (*byte as u128) << (i * 8) as u128;
+        data |= (*byte as u128).wrapping_shr(i as u32 * 8);
     }
 
     let file = match FilePath::from_str(&file.display().to_string()) {

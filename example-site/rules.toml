@@ -3,10 +3,6 @@ name = "asciidoc"
 command = "asciidoctor --no-header-footer {full} -o {outfile}"
 outfile = "{dir}/{name}/index.html"
 
-[[filters]]
-name = "no-match"
-command = "echo Skipped `{full}`"
-
 [[rules]]
 rule = ".*index.html"
 filters = []
@@ -37,7 +33,3 @@ filters = [{ command = "pandoc {full} -o {outfile}", outfile = "{dir}/{name}/ind
 templates = ["default.html"]
 output = "{dir}/{name}/index.html"
 
-[[rules]]
-rule = ".*"
-filters = ["no-match"]
-templates = []
