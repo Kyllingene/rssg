@@ -1,6 +1,6 @@
 [package]
 name = "rssg"
-version = "1.7.2"
+version = "1.7.3"
 edition = "2021"
 
 license = "MIT"
@@ -15,10 +15,10 @@ repository = "https://github.com/kyllingene/rssg"
 [dependencies]
 fancy-regex = "0.11"
 serde = "1.0"
-toml = "0.7"
+toml = "0.8.0"
 serde_yaml = "0.9"
 yaml-front-matter = "0.1.0"
-sarge = "2.0"
+sarge = "4.0.2"
 fern = "0.6.2"
 log = "0.4.17"
 sha2 = "0.10.6"

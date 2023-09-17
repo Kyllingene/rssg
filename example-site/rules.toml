@@ -4,32 +4,31 @@ command = "asciidoctor --no-header-footer {full} -o {outfile}"
 outfile = "{dir}/{name}/index.html"
 
 [[rules]]
-rule = ".*index.html"
+rule = ".*/index.html"
 filters = []
 templates = []
 output = "{dir}/index.html"
 
 [[rules]]
-rule = ".*html"
+rule = ".*\\.html"
 filters = []
 templates = []
 output = "{dir}/{name}/index.html"
 
 [[rules]]
-rule = ".*index.(adoc|asciidoc)"
+rule = ".*/index.(adoc|asciidoc)"
 filters = ["asciidoc"]
 templates = ["default.html"]
 output = "{dir}/{name}.html"
 
 [[rules]]
-rule = ".*(adoc|asciidoc)"
+rule = ".*\\.(adoc|asciidoc)"
 filters = ["asciidoc"]
 templates = ["default.html"]
 output = "{dir}/{name}/index.html"
 
 [[rules]]
-rule = ".*(md|markdown)"
+rule = ".*\\.(md|markdown)"
 filters = [{ command = "pandoc {full} -o {outfile}", outfile = "{dir}/{name}/index.html" }]
 templates = ["default.html"]
 output = "{dir}/{name}/index.html"
-

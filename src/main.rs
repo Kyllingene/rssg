@@ -15,33 +15,60 @@ use std::path::Path;
 use std::process::exit;
 
 use log::{error, info};
-use sarge::{arg, get_flag, get_val, ArgumentParser};
+use sarge::prelude::*;
+
+struct Args {
+    help: bool,
+    compile: bool,
+    logfile: Result<String, ()>,
+    verbose: bool,
+    force: bool,
+
+    content: Result<String, ()>,
+    output: Result<String, ()>,
+    public: Result<String, ()>,
+    clean: bool,
+}
 
 fn main() {
-    let mut parser = ArgumentParser::new();
-    parser.add(arg!(flag, both, 'h', "help"));
-    parser.add(arg!(flag, both, 'c', "compile"));
-    parser.add(arg!(str, both, 'l', "logfile"));
-    parser.add(arg!(flag, both, 'v', "verbose"));
-    parser.add(arg!(flag, both, 'f', "force"));
+    let parser = ArgumentParser::new();
+    let args = {
+        let help = parser.add(tag::both('h', "help"));
+        let compile = parser.add(tag::both('c', "compile"));
+        let logfile = parser.add(tag::both('l', "logfile"));
+        let verbose = parser.add(tag::both('v', "verbose"));
+        let force = parser.add(tag::both('f', "force"));
 
-    parser.add(arg!(str, long, "content"));
-    parser.add(arg!(str, long, "output"));
-    parser.add(arg!(str, long, "public"));
-    parser.add(arg!(flag, long, "clean"));
+        let content = parser.add(tag::long("content"));
+        let output = parser.add(tag::long("output"));
+        let public = parser.add(tag::long("public"));
+        let clean = parser.add(tag::long("clean"));
 
-    let _args = match parser.parse() {
-        Ok(a) => a,
-        Err(e) => {
-            eprintln!("ERROR: Failed to parse arguments: {e}");
-            exit(1);
+        let _args = match parser.parse() {
+            Ok(a) => a,
+            Err(e) => {
+                eprintln!("ERROR: Failed to parse arguments: {e}");
+                exit(1);
+            }
+        };
+
+        Args {
+            help: help.get().unwrap(),
+            compile: compile.get().unwrap(),
+            logfile: logfile.get(),
+            verbose: verbose.get().unwrap(),
+            force: force.get().unwrap(),
+            content: content.get(),
+            output: output.get(),
+            public: public.get(),
+            clean: clean.get().unwrap(),
         }
     };
 
-    if get_flag!(parser, both, 'h', "help") {
+    if args.help {
         println!(
             "{} [options]",
-            parser.binary.unwrap_or_else(|| String::from("rssg"))
+            parser.binary().unwrap_or_else(|| String::from("rssg"))
         );
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
@@ -61,7 +88,6 @@ fn main() {
     }
 
     let mut dis = fern::Dispatch::new()
-        // Perform allocation-free log formatting
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{} {}] {}",
@@ -71,14 +97,14 @@ fn main() {
             ))
         });
 
-    if get_flag!(parser, both, 'v', "verbose") {
+    if args.verbose {
         dis = dis.level(log::LevelFilter::Debug);
     } else {
         dis = dis.level(log::LevelFilter::Info);
     }
 
-    if let Some(i) = get_val!(parser, both, 'l', "logfile") {
-        let path = match fern::log_file(i.get_str()) {
+    if let Ok(i) = args.logfile {
+        let path = match fern::log_file(i) {
             Ok(p) => p,
             Err(e) => {
                 eprintln!("ERROR: failed to establish logging to file: {e}");
@@ -95,13 +121,9 @@ fn main() {
         exit(1);
     }
 
-    let output = if let Some(c) = get_val!(parser, long, "output") {
-        c.get_str()
-    } else {
-        String::from("output")
-    };
+    let output = args.output.unwrap_or_else(|_| String::from("output"));
 
-    if get_flag!(parser, long, "clean") {
+    if args.clean {
         info!("Cleaning `{}` and `temp/`", output);
         if let Err(e) = remove_dir_all(Path::new(&output)) {
             if e.kind() != ErrorKind::NotFound {
@@ -125,23 +147,15 @@ fn main() {
         }
     }
 
-    if get_flag!(parser, both, 'c', "compile") {
+    if args.compile {
         if !Path::new("rules.toml").exists() {
             error!("No `rules.toml` found, aborting");
             exit(1);
         }
 
-        let content = if let Some(c) = get_val!(parser, long, "content") {
-            c.get_str()
-        } else {
-            String::from("content")
-        };
+        let content = args.content.unwrap_or_else(|_| String::from("content"));
 
-        let public = if let Some(c) = get_val!(parser, long, "public") {
-            c.get_str()
-        } else {
-            String::from("public")
-        };
+        let public = args.public.unwrap_or_else(|_| String::from("public"));
 
         if !Path::new(&content).exists() {
             error!("Content directory (`{}`) not found, aborting", content);
@@ -170,7 +184,7 @@ fn main() {
             content,
             output,
             public,
-            get_flag!(parser, both, 'f', "force"),
+            args.force,
         ) {
             error!("Build failed");
             exit(1);
