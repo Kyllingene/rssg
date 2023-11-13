@@ -20,13 +20,13 @@ use sarge::prelude::*;
 struct Args {
     help: bool,
     compile: bool,
-    logfile: Result<String, ()>,
+    logfile: Option<String>,
     verbose: bool,
     force: bool,
 
-    content: Result<String, ()>,
-    output: Result<String, ()>,
-    public: Result<String, ()>,
+    content: Option<String>,
+    output: Option<String>,
+    public: Option<String>,
     clean: bool,
 }
 
@@ -55,12 +55,12 @@ fn main() {
         Args {
             help: help.get().unwrap(),
             compile: compile.get().unwrap(),
-            logfile: logfile.get(),
+            logfile: logfile.get().ok(),
             verbose: verbose.get().unwrap(),
             force: force.get().unwrap(),
-            content: content.get(),
-            output: output.get(),
-            public: public.get(),
+            content: content.get().ok(),
+            output: output.get().ok(),
+            public: public.get().ok(),
             clean: clean.get().unwrap(),
         }
     };
@@ -103,7 +103,7 @@ fn main() {
         dis = dis.level(log::LevelFilter::Info);
     }
 
-    if let Ok(i) = args.logfile {
+    if let Some(i) = args.logfile {
         let path = match fern::log_file(i) {
             Ok(p) => p,
             Err(e) => {
@@ -121,7 +121,7 @@ fn main() {
         exit(1);
     }
 
-    let output = args.output.unwrap_or_else(|_| String::from("output"));
+    let output = args.output.unwrap_or_else(|| String::from("output"));
 
     if args.clean {
         info!("Cleaning `{}` and `temp/`", output);
@@ -153,9 +153,9 @@ fn main() {
             exit(1);
         }
 
-        let content = args.content.unwrap_or_else(|_| String::from("content"));
+        let content = args.content.unwrap_or_else(|| String::from("content"));
 
-        let public = args.public.unwrap_or_else(|_| String::from("public"));
+        let public = args.public.unwrap_or_else(|| String::from("public"));
 
         if !Path::new(&content).exists() {
             error!("Content directory (`{}`) not found, aborting", content);
