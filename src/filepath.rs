@@ -125,7 +125,7 @@ impl FromStr for FilePath {
         filepath.ext = path
             .extension()
             .map(|s| s.to_string_lossy().into_owned())
-            .unwrap_or_else(String::new);
+            .unwrap_or_default();
 
         Ok(filepath)
     }

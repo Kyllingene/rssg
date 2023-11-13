@@ -35,7 +35,7 @@ fn main() {
     let args = {
         let help = parser.add(tag::both('h', "help"));
         let compile = parser.add(tag::both('c', "compile"));
-        let logfile = parser.add(tag::both('l', "logfile"));
+        let logfile = parser.add(tag::both('l', "logfile").env("RSSG_LOGFILE"));
         let verbose = parser.add(tag::both('v', "verbose"));
         let force = parser.add(tag::both('f', "force"));
 
