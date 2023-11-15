@@ -24,6 +24,7 @@
 rssg [options]
      -h |    --help : print this help dialog
      -c | --compile : compile the site
+     -i |    --init : create a new site
      -v | --verbose : include debug output
      -f |   --force : force recompilation
                       rebuilds cache
