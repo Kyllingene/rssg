@@ -16,6 +16,8 @@
 
 **An example website can be found in the `example-site` directory.**
 
+Use `rssg -i path-to-new-site` to create a new site.
+
 ---
 
 ### Command-line usage
