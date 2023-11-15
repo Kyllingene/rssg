@@ -1,10 +1,10 @@
 #[macro_export]
 macro_rules! field {
-    ( $d:ident, $n:ident, $t:ident ) => {
-        if let Some(toml::Value::$t(v)) = &$d.get(stringify!($n)) {
+    ( $root:ident, $name:ident, $typ:ident ) => {
+        if let Some(toml::Value::$typ(v)) = &$root.get(stringify!($name)) {
             v
         } else {
-            return Err(ParseError::MissingField(stringify!($n)));
+            return Err(ParseError::MissingField(stringify!($name)));
         }
     };
 }

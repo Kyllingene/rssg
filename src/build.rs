@@ -27,14 +27,15 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
 }
 
 pub fn build(
-    rules: Vec<Rule>,
-    commands: (Vec<Command>, Vec<Command>),
+    rules: &[Rule],
+    pre_commands: Vec<Command>, 
+    post_commands: Vec<Command>,
     content: String,
     output: String,
     public: String,
     force_recomp: bool,
 ) -> bool {
-    for command in commands.0 {
+    for command in pre_commands {
         match command.exec(None, None) {
             ExitStatus::Success(cmd) => {
                 debug!("Pre-command `{}` exited successfully", cmd);
@@ -124,7 +125,7 @@ pub fn build(
 
                     continue;
                 } else {
-                    for rule in &rules {
+                    for rule in rules {
                         if rule.matches(file) {
                             if let Ok(path) = rule.out(file) {
                                 let path = path.strip_prefix(&content).prefix(&output);
@@ -184,7 +185,7 @@ pub fn build(
         cache::cache_file(Path::new(&file.full()), &mut file_cache);
 
         info!("Building file `{}`", file.full());
-        for rule in &rules {
+        for rule in rules {
             if rule.matches(file) {
                 debug!("Found matching rule");
                 if !rule.exec(file.clone(), &content, &output) {
@@ -232,7 +233,7 @@ pub fn build(
     debug!("Writing cache");
     cache::write_cache(Path::new(".rssg-cache"), file_cache);
 
-    for command in commands.1 {
+    for command in post_commands {
         match command.exec(None, None) {
             ExitStatus::Success(cmd) => {
                 debug!("Post-command `{}` exited successfully", cmd);

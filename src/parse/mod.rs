@@ -7,9 +7,13 @@ use crate::error::*;
 use crate::field;
 use crate::rule::Rule;
 
-type ParsedDataResult = ParseResult<(Vec<Rule>, (Vec<Command>, Vec<Command>))>;
+pub struct ParsedDataResult {
+    pub rules: Vec<Rule>,
+    pub pre_commands: Vec<Command>,
+    pub post_commands: Vec<Command>,
+}
 
-pub fn parse(data: String) -> ParsedDataResult {
+pub fn parse(data: String) -> Result<ParsedDataResult, ParseError> {
     let data: toml::Value = toml::from_str(&data).map_err(ParseError::TomlError)?;
 
     let filters = field!(data, filters, Array);
@@ -36,5 +40,5 @@ pub fn parse(data: String) -> ParsedDataResult {
     let filters = filter::parse_filters(filters)?;
     let rules = rule::parse_rules(rules, &filters)?;
 
-    Ok((rules, (pre_commands, post_commands)))
+    Ok(ParsedDataResult { rules, pre_commands, post_commands })
 }

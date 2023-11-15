@@ -9,7 +9,7 @@ mod rule;
 mod tempfile;
 mod template;
 
-use std::fs::{read_to_string, remove_dir_all, remove_file};
+use std::fs::{self, File};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::process::exit;
@@ -20,13 +20,14 @@ use sarge::prelude::*;
 struct Args {
     help: bool,
     compile: bool,
-    logfile: Result<String, ()>,
+    init: Option<String>,
+    logfile: Option<String>,
     verbose: bool,
     force: bool,
 
-    content: Result<String, ()>,
-    output: Result<String, ()>,
-    public: Result<String, ()>,
+    content: Option<String>,
+    output: Option<String>,
+    public: Option<String>,
     clean: bool,
 }
 
@@ -35,6 +36,7 @@ fn main() {
     let args = {
         let help = parser.add(tag::both('h', "help"));
         let compile = parser.add(tag::both('c', "compile"));
+        let init = parser.add(tag::both('i', "init"));
         let logfile = parser.add(tag::both('l', "logfile").env("RSSG_LOGFILE"));
         let verbose = parser.add(tag::both('v', "verbose"));
         let force = parser.add(tag::both('f', "force"));
@@ -55,12 +57,13 @@ fn main() {
         Args {
             help: help.get().unwrap(),
             compile: compile.get().unwrap(),
-            logfile: logfile.get(),
+            init: init.get().ok(),
+            logfile: logfile.get().ok(),
             verbose: verbose.get().unwrap(),
             force: force.get().unwrap(),
-            content: content.get(),
-            output: output.get(),
-            public: public.get(),
+            content: content.get().ok(),
+            output: output.get().ok(),
+            public: public.get().ok(),
             clean: clean.get().unwrap(),
         }
     };
@@ -72,6 +75,7 @@ fn main() {
         );
         println!("     -h |    --help : print this help dialog");
         println!("     -c | --compile : compile the site");
+        println!("     -i |    --init : create a new site");
         println!("     -v | --verbose : include debug output");
         println!("     -f |   --force : force recompilation");
         println!("                      rebuilds cache");
@@ -103,7 +107,7 @@ fn main() {
         dis = dis.level(log::LevelFilter::Info);
     }
 
-    if let Ok(i) = args.logfile {
+    if let Some(i) = args.logfile {
         let path = match fern::log_file(i) {
             Ok(p) => p,
             Err(e) => {
@@ -121,25 +125,51 @@ fn main() {
         exit(1);
     }
 
-    let output = args.output.unwrap_or_else(|_| String::from("output"));
+    let output = args.output.unwrap_or_else(|| String::from("output"));
+
+    if let Some(new_dir) = args.init {
+        if let Err(e) = std::fs::create_dir_all(&new_dir) {
+            error!("Failed to create root directory: {e}");
+            exit(1);
+        }
+        if let Err(e) = std::fs::create_dir_all(new_dir.clone() + "/content") {
+            error!("Failed to create content directory: {e}");
+            exit(1);
+        }
+        if let Err(e) = std::fs::create_dir_all(new_dir.clone() + "/public") {
+            error!("Failed to create public directory: {e}");
+            exit(1);
+        }
+        if let Err(e) = std::fs::create_dir_all(new_dir.clone() + "/templates") {
+            error!("Failed to create templates directory: {e}");
+            exit(1);
+        }
+
+        if let Err(e) = File::create(new_dir.clone() + "/rules.toml") {
+            error!("Failed to create rules.toml: {e}");
+            exit(1);
+        }
+
+        info!("Initialized new site at {new_dir}");
+    }
 
     if args.clean {
         info!("Cleaning `{}` and `temp/`", output);
-        if let Err(e) = remove_dir_all(Path::new(&output)) {
+        if let Err(e) = fs::remove_dir_all(Path::new(&output)) {
             if e.kind() != ErrorKind::NotFound {
                 error!("Failed to remove `{}`: {}", output, e);
                 exit(1);
             }
         }
 
-        if let Err(e) = remove_dir_all(Path::new("temp")) {
+        if let Err(e) = fs::remove_dir_all(Path::new("temp")) {
             if e.kind() != ErrorKind::NotFound {
                 error!("Failed to remove `temp/`: {}", e);
                 exit(1);
             }
         }
 
-        if let Err(e) = remove_file(".rssg-cache") {
+        if let Err(e) = fs::remove_file(".rssg-cache") {
             if e.kind() != ErrorKind::NotFound {
                 error!("Failed to remove `.rssg-cache`: {}", e);
                 exit(1);
@@ -153,16 +183,16 @@ fn main() {
             exit(1);
         }
 
-        let content = args.content.unwrap_or_else(|_| String::from("content"));
+        let content = args.content.unwrap_or_else(|| String::from("content"));
 
-        let public = args.public.unwrap_or_else(|_| String::from("public"));
+        let public = args.public.unwrap_or_else(|| String::from("public"));
 
         if !Path::new(&content).exists() {
             error!("Content directory (`{}`) not found, aborting", content);
             exit(1);
         }
 
-        let data = match read_to_string("rules.toml") {
+        let data = match fs::read_to_string("rules.toml") {
             Ok(s) => s,
             Err(e) => {
                 error!("Failed to read `rules.toml`: {}", e);
@@ -170,7 +200,7 @@ fn main() {
             }
         };
 
-        let (rules, commands) = match parse::parse(data) {
+        let parse::ParsedDataResult { rules, pre_commands, post_commands } = match parse::parse(data) {
             Ok(r) => r,
             Err(e) => {
                 error!("Failed to parse rules: {}", e);
@@ -179,8 +209,9 @@ fn main() {
         };
 
         if !build::build(
-            rules,
-            commands,
+            &rules,
+            pre_commands,
+            post_commands,
             content,
             output,
             public,

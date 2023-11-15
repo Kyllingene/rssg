@@ -2,7 +2,7 @@ use std::process;
 
 use fancy_regex::Regex;
 use log::debug;
-use serde::{de::Visitor, Deserialize};
+use serde::Deserialize;
 
 use crate::filepath::FilePath;
 
@@ -24,7 +24,8 @@ pub enum ExitStatus {
     Failed(String, std::io::Error),
 }
 
-#[derive(Debug, Clone)]
+/// A command to run, whether as part of a rule, pre-command, or post-command.
+#[derive(Debug, Clone, Deserialize)]
 pub struct Command {
     command: String,
 }
@@ -78,39 +79,39 @@ impl Command {
             Ok(mut child) => match child.wait() {
                 Ok(code) => {
                     if !code.success() {
-                        return ExitStatus::NonZero(subbed_command, code.code().unwrap_or(1));
+                        ExitStatus::NonZero(subbed_command, code.code().unwrap_or(1))
+                    } else {
+                        ExitStatus::Success(subbed_command)
                     }
                 }
 
                 Err(e) => {
-                    return ExitStatus::Failed(subbed_command, e);
+                    ExitStatus::Failed(subbed_command, e)
                 }
             },
 
             Err(e) => {
-                return ExitStatus::Failed(subbed_command, e);
+                ExitStatus::Failed(subbed_command, e)
             }
         }
-
-        ExitStatus::Success(subbed_command)
     }
 }
 
-struct CommandVisitor;
-impl<'de> Visitor<'de> for CommandVisitor {
-    type Value = String;
+// struct CommandVisitor;
+// impl<'de> Visitor<'de> for CommandVisitor {
+//     type Value = String;
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "a string")
-    }
-}
+//     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         write!(formatter, "a string")
+//     }
+// }
 
-impl<'de> Deserialize<'de> for Command {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let command = deserializer.deserialize_string(CommandVisitor {})?;
-        Ok(Command::new(command))
-    }
-}
+// impl<'de> Deserialize<'de> for Command {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         let command = deserializer.deserialize_string(CommandVisitor {})?;
+//         Ok(Command::new(command))
+//     }
+// }
