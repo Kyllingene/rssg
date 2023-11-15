@@ -40,5 +40,9 @@ pub fn parse(data: String) -> Result<ParsedDataResult, ParseError> {
     let filters = filter::parse_filters(filters)?;
     let rules = rule::parse_rules(rules, &filters)?;
 
-    Ok(ParsedDataResult { rules, pre_commands, post_commands })
+    Ok(ParsedDataResult {
+        rules,
+        pre_commands,
+        post_commands,
+    })
 }

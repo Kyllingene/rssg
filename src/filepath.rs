@@ -76,6 +76,14 @@ impl FilePath {
     pub fn ext(&self) -> String {
         self.ext.clone()
     }
+
+    pub fn parent(&self) -> String {
+        Path::new(&self.dir())
+            .components()
+            .last()
+            .map(|s| s.as_os_str().to_string_lossy().to_string())
+            .unwrap_or_default()
+    }
 }
 
 impl Display for FilePath {

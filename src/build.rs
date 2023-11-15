@@ -28,7 +28,7 @@ fn visit_dirs(dir: &Path) -> io::Result<Vec<FilePath>> {
 
 pub fn build(
     rules: &[Rule],
-    pre_commands: Vec<Command>, 
+    pre_commands: Vec<Command>,
     post_commands: Vec<Command>,
     content: String,
     output: String,

@@ -14,6 +14,7 @@ pub fn substitute(string: &str, path: &FilePath) -> String {
         .replace("{dir}", &path.dir())
         .replace("{name}", &path.name())
         .replace("{ext}", &path.ext())
+        .replace("{parent}", &path.parent())
 }
 
 #[derive(Debug, Clone, Deserialize)]

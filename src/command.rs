@@ -85,14 +85,10 @@ impl Command {
                     }
                 }
 
-                Err(e) => {
-                    ExitStatus::Failed(subbed_command, e)
-                }
+                Err(e) => ExitStatus::Failed(subbed_command, e),
             },
 
-            Err(e) => {
-                ExitStatus::Failed(subbed_command, e)
-            }
+            Err(e) => ExitStatus::Failed(subbed_command, e),
         }
     }
 }

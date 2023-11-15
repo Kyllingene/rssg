@@ -91,15 +91,14 @@ fn main() {
         return;
     }
 
-    let mut dis = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {}] {}",
-                record.level(),
-                record.target(),
-                message
-            ))
-        });
+    let mut dis = fern::Dispatch::new().format(|out, message, record| {
+        out.finish(format_args!(
+            "[{} {}] {}",
+            record.level(),
+            record.target(),
+            message
+        ))
+    });
 
     if args.verbose {
         dis = dis.level(log::LevelFilter::Debug);
@@ -200,7 +199,11 @@ fn main() {
             }
         };
 
-        let parse::ParsedDataResult { rules, pre_commands, post_commands } = match parse::parse(data) {
+        let parse::ParsedDataResult {
+            rules,
+            pre_commands,
+            post_commands,
+        } = match parse::parse(data) {
             Ok(r) => r,
             Err(e) => {
                 error!("Failed to parse rules: {}", e);

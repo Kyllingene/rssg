@@ -85,6 +85,7 @@ All filters require an output file. This gets substituted, then substituted for
  - `{dir}`: The parent directories of the input file.
  - `{name}`: The filename of the input file (minus extension).
  - `{ext}`: The extension of the input file.
+ - `{parent}`: The direct parent of the input file.
 
 In the `rules.toml`, filters can be in a list at the top-level of the file.
 Here's an example that runs the file through `pandoc`, then outputs it without
