@@ -61,13 +61,13 @@ impl Rule {
                 }
             };
 
-            let data = match YamlFrontMatter::parse::<serde_yaml::Value>(&data) {
+            let data = match YamlFrontMatter::parse::<serde_yaml::Mapping>(&data) {
                 Ok(y) => {
                     yaml = Some(y.metadata);
                     y.content
                 }
                 Err(_) => {
-                    yaml = Some(serde_yaml::Value::Null);
+                    yaml = Some(serde_yaml::Mapping::new());
                     data
                 }
             };
@@ -132,7 +132,7 @@ impl Rule {
                 }
 
                 if let Err(e) =
-                    apply_template(template, &cwpath.full(), out.full(), &yaml.clone().unwrap())
+                    apply_template(template, &cwpath.full(), out.full(), yaml.as_ref().unwrap())
                 {
                     error!("Failed to apply template: {}", e);
                     return false;

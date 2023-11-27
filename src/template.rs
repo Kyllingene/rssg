@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::{File, OpenOptions};
@@ -5,7 +6,8 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::str::FromStr;
 
-use serde_yaml::Value;
+use handlebars::{Handlebars, RenderError};
+use serde_yaml::{Mapping, Value};
 
 use crate::filepath::FilePath;
 
@@ -16,6 +18,7 @@ pub enum TemplateErr {
     InvalidPath(String),
 
     TemplateNotFound(String),
+    InvalidTemplate(RenderError),
     FileNotFound(String),
 
     FailedToReadTemplate(std::io::Error),
@@ -30,6 +33,7 @@ impl Display for TemplateErr {
             Self::InvalidPath(file) => write!(f, "Invalid file path {file}"),
 
             Self::TemplateNotFound(file) => write!(f, "Failed to find template file {file}"),
+            Self::InvalidTemplate(e) => write!(f, "Failed to apply template: {e}"),
             Self::FileNotFound(file) => write!(f, "Failed to find input file {file}"),
 
             Self::FailedToReadTemplate(e) => write!(f, "Failed to read template file: {e}"),
@@ -46,7 +50,7 @@ pub fn apply_template<T, F, O>(
     template: T,
     file: F,
     out: O,
-    yaml: &Value,
+    yaml: &Mapping,
 ) -> Result<(), TemplateErr>
 where
     T: AsRef<Path>,
@@ -100,41 +104,16 @@ where
         Err(e) => return Err(TemplateErr::FailedToReadFile(e)),
     };
 
-    template_data = template_data
-        .replace("{{data}}", data.as_str())
-        .replace("{{version}}", VERSION.unwrap_or("unknown"));
+    template_data = template_data.replace("{{data}}", &data);
+    template_data = template_data.replace("{{ data }}", &data);
 
-    let mut last = 0;
-    while let Some(mut start) = template_data[(last as usize)..].find("{{data.") {
-        start += last as usize;
-        let temp = &template_data[start..];
-        let end = match temp.find("}}") {
-            Some(i) => i + start,
-            None => continue,
-        };
+    let mut vars: HashMap<Value, Value> = HashMap::from_iter(yaml.clone());
+    vars.insert("version".into(), VERSION.unwrap_or("unknown").into());
 
-        let ident = &template_data[start + 7..end];
-        let length = if let Some(val) = yaml.get(ident) {
-            let to_rep = format!("{{{{data.{ident}}}}}");
-            let rep_with = match val {
-                Value::String(s) => s.clone(),
-                Value::Bool(v) => format!("{v}"),
-                Value::Number(v) => format!("{v}"),
-                Value::Null => "null".to_string(),
-                _ => format!("{val:?}"),
-            };
-
-            template_data = template_data.replace(&to_rep, &rep_with);
-
-            rep_with.len() as i64 - to_rep.len() as i64
-        } else {
-            0
-        };
-
-        last = end as i64 + length;
-    }
-
-    template_data = template_data.replace("{\\{", "{{");
+    let reg = Handlebars::new();
+    template_data = reg
+        .render_template(&template_data, &vars)
+        .map_err(TemplateErr::InvalidTemplate)?;
 
     match OpenOptions::new()
         .write(true)

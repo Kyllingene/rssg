@@ -1,6 +1,6 @@
 [package]
 name = "rssg"
-version = "1.8.1"
+version = "2.0.0"
 edition = "2021"
 
 license = "MIT"
@@ -22,3 +22,4 @@ sarge = "5.0"
 fern = "0.6.2"
 log = "0.4.17"
 sha2 = "0.10.6"
+handlebars = "4.5.0"
